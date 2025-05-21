@@ -1,6 +1,6 @@
 from LLMManager import TextEmbeddingManager
 from sentence_transformers import SentenceTransformer, util
-from sklearn.neighbors import LocalOutlierFactor
+from sklearn.ensemble import IsolationForest
 from loguru import logger
 from tqdm import tqdm
 import os
@@ -33,31 +33,15 @@ class SemanticChunks:
                 sentences.append(sent.strip())
         return sentences
 
-    def __detect_outliers_lof(self, data, n_neighbors=20, contamination=0.1):
-        """
-        使用 LOF 检测异常值。
-
-        参数:
-            data (list[list[float]] or np.ndarray): 输入数据，多维或一维。
-            n_neighbors (int): 用于比较密度的邻居数量。
-            contamination (float): 异常值的比例估计。
-
-        返回:
-            outliers: 异常值列表
-            inliers: 非异常值列表
-        """
+    def __detect_outliers_isolation_forest(self, data):
         data = np.array(data).reshape(-1, 1)
-        lof = LocalOutlierFactor(n_neighbors=n_neighbors, contamination=contamination)
-        y_pred = lof.fit_predict(data)
-
-        outliers = data[y_pred == -1]
-        inliers = data[y_pred == 1]
-
-        return outliers.tolist(), inliers.tolist()
+        clf = IsolationForest(contamination=0.05)
+        preds = clf.fit_predict(data)
+        return [x for x, p in zip(data.flatten(), preds) if p == -1]
 
     def identify_concept(self, concepts: list, method: str) -> list:
         similarities = self.get_similarity(concepts, method)
-        outliers = self.__detect_outliers_lof(similarities)[0]
+        outliers = self.__detect_outliers_isolation_forest(similarities)
         logger.info(f"{len(outliers)} outliers detected: {outliers}")
         return outliers
 
@@ -123,8 +107,11 @@ if __name__ == "__main__":
         "What if I'm wrong?",
         "Assuming that I made a mistake",
         "Something doesn't add up",
+        "I should double-check",
+        "I should verify",
+        "check again",
     ]
-    test_CoT = """Is it right? Okay, the user is asking for the integral of x squared. Let me recall how to integrate polynomials. 
+    test_CoT = """ Okay, the user is asking for the integral of x squared. Let me recall how to integrate polynomials. 
 I remember that the integral of x^n is (x^(n+1))/(n+1) + C, as long as n isn't -1. 
 So here, n is 2. Applying that formula, it should be x cubed divided by 3 plus a constant. 
 Wait, let me double-check. If I take the derivative of x^3/3, I get 3x²/3 which simplifies to x². Yep, that works. 
