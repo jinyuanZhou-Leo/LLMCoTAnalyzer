@@ -55,16 +55,19 @@ class SemanticChunks:
 
         return outliers.tolist(), inliers.tolist()
 
-    def get_similarity(self, concepts, method: str):
-        if method == "SBERT":
-            similarities = self.__get_similarity_SBERT(concepts)
-        elif method == "TextEmbedding":
-            similarities = self.__get_similarity_TextEmbedding(concepts)
-        else:
-            raise ValueError("Invalid method. Choose 'SBERT' or 'TextEmbedding'.")
-
+    def identify_concept(self, concepts: list, method: str) -> list:
+        similarities = self.get_similarity(concepts, method)
         outliers = self.__detect_outliers_lof(similarities)[0]
         logger.info(f"{len(outliers)} outliers detected: {outliers}")
+        return outliers
+
+    def get_similarity(self, concepts, method: str):
+        if method == "SBERT":
+            return self.__get_similarity_SBERT(concepts)
+        elif method == "TextEmbedding":
+            return self.__get_similarity_TextEmbedding(concepts)
+        else:
+            raise ValueError("Invalid method. Choose 'SBERT' or 'TextEmbedding'.")
 
     def __get_similarity_SBERT(self, concepts):
         model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -129,5 +132,7 @@ So the integral of x² dx is (x³)/3 + C. I should also mention that the constan
 The user might be a student learning calculus, so explaining the power rule clearly would help. Maybe they need this for homework or an exam. 
 I should present the answer step by step to make it clear. Also, maybe they want to know why the formula works, but since the question is straightforward, keeping it concise but correct is best. 
 Let me make sure I didn't mix up any exponents. No, 2+1 is 3, so that's right. Alright, that should be it."""
-    test_semantic_chunk = SemanticChunks(test_CoT)
-    test_semantic_chunk.get_similarity(concepts=concepts, method="TextEmbedding")
+    test_semantic_chunk = SemanticChunks(content=test_CoT)
+    outliers = test_semantic_chunk.identify_concept(concepts=concepts, method="TextEmbedding")
+    logger.success(f"There are {len(outliers)}, Outliers: {outliers}")
+    print(type(outliers))
