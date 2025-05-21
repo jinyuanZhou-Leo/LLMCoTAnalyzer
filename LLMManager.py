@@ -44,6 +44,10 @@ class LLMManager:
         else:
             logger.success("OpenAI client initialized successfully")
 
+        self.initialize_context()
+
+    def initialize_context(self):
+        self.context = []
         self.__add_context("system", self.system_prompt)
 
     def set_thinking(self, enable_thinking: bool):
@@ -71,7 +75,7 @@ class LLMManager:
             stream=self.stream,
         )
 
-    def get_chat_completion(self, user_prompt: str):
+    def get_chat_completion(self, user_prompt: str, verbose: bool = False) -> dict:
         """
         Get the chat completion from the model.
         """
@@ -81,42 +85,49 @@ class LLMManager:
             logger.error(f"Failed to get chat completion: {e}")
             raise e
 
+        reasoning_content = ""
+        answer_content = ""
         if self.extra_body.get("enable_thinking", True):
             # the model is running in thinking mode
-            reasoning_content = ""
-            answer_content = ""
             is_answering = False  # a flag indicates whether the model has already begin answering
-            print("Thinking: ", end="")
+            if not verbose:
+                print("Thinking: ", end="")
             for chunk in completion:
                 delta = chunk.choices[0].delta
                 # collect the reasoning content
                 if hasattr(delta, "reasoning_content") and delta.reasoning_content is not None:
                     if not is_answering:
-                        print(delta.reasoning_content, end="", flush=True)
+                        if not verbose:
+                            print(delta.reasoning_content, end="", flush=True)
                     reasoning_content += delta.reasoning_content
 
                 # collect the answer content
                 if hasattr(delta, "content") and delta.content:
                     if not is_answering:
-                        print(f"\n{self.model_name.upper()} - Response: ", end="")
+                        if not verbose:
+                            print(f"\n{self.model_name.upper()} - Response: ", end="")
                         is_answering = True
-                    print(delta.content, end="", flush=True)
+                    if not verbose:
+                        print(delta.content, end="", flush=True)
                     answer_content += delta.content
         else:
             # Thinking mode is off
             for chunk in completion:
                 if not chunk.choices:
-                    print("\nUsage:")
-                    print(chunk.usage)
+                    if not verbose:
+                        print("\nUsage:")
+                        print(chunk.usage)
                     continue
 
                 delta = chunk.choices[0].delta
                 if hasattr(delta, "content") and delta.content:
-                    print(delta.content, end="", flush=True)
+                    if not verbose:
+                        print(delta.content, end="", flush=True)
 
-        logger.debug(f"Reasoning content: {reasoning_content}")
-        logger.debug(f"Answer content: {answer_content}")
-        self.__add_context("assistant", answer_content)
+        # logger.debug(f"Reasoning content: {reasoning_content}")
+        # logger.debug(f"Answer content: {answer_content}")
+        self.__add_context("assistant", reasoning_content + answer_content)
+        return {"reasoning": reasoning_content, "answer": answer_content}
 
 
 class TextEmbeddingManager:

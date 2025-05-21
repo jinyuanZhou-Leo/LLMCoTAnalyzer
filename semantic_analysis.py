@@ -63,8 +63,8 @@ class SemanticChunks:
         else:
             raise ValueError("Invalid method. Choose 'SBERT' or 'TextEmbedding'.")
 
-        cnt = len(self.__detect_outliers_lof(similarities)[0])
-        logger.info(f"{cnt} outliers detected.")
+        outliers = self.__detect_outliers_lof(similarities)[0]
+        logger.info(f"{len(outliers)} outliers detected: {outliers}")
 
     def __get_similarity_SBERT(self, concepts):
         model = SentenceTransformer("all-MiniLM-L6-v2")

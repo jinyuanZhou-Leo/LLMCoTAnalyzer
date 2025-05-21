@@ -9,7 +9,7 @@ logger.add(sys.stdout, level="INFO", colorize=True)
 model = None
 try:
     model = LLMManager(
-        model_name="qwen3-4b",
+        model_name="qwen3-1.7b",
         system_prompt="You are a helpful assistant.",
         api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         api_key=os.getenv("DASHSCOPE_API_KEY"),
@@ -21,6 +21,7 @@ except Exception as e:
 model.set_thinking(True)
 
 while True:
+    print("\n")
     user_input = input("User: ")
     if user_input.lower() == "exit":
         break
