@@ -18,7 +18,7 @@ class Simulation:
         repetition: int,
         question_list: list[str],
         system_prompt: str,
-        filter_concept: list,
+        filter_concept: list = None,
         embedding_method: str = "TextEmbedding",
         output_path: str = f"simulation_results-{datetime.now().strftime("%m-%d-%H:%M:%S")}.csv",
     ):
@@ -57,14 +57,14 @@ class Simulation:
                                 )
                                 chat_completion = model.get_chat_completion(question, verbose=True)
                                 reasoning = SemanticChunks(chat_completion["reasoning"], method="SBERT")
-                                outliers = reasoning.identify_concept(self.concept)
-                                logger.success(f"Finished | Outliers_Cnt: {len(outliers)}")
+                                outliers_cnt = reasoning.count_concept(self.concept)
+                                logger.success(f"Finished | Outliers_Cnt: {outliers_cnt}")
                                 writer.writerow(
                                     {
                                         "Model": model_name,
                                         "Question": question,
                                         "Repetition": i + 1,
-                                        "Count": len(outliers),
+                                        "Count": outliers_cnt,
                                         "Reasoning": chat_completion["reasoning"],
                                         "Timestamp": datetime.now().isoformat(),
                                     }
@@ -99,6 +99,8 @@ if __name__ == "__main__":
         repetition=2,
         question_list=question_list,
         system_prompt=system_prompt,
-        filter_concept=concepts,
+        embedding_method="SupervisedClassification",
     )
+    # filter_concept=concepts
+    # ! if we use supervised classification, we need to provide the concepts
     simulation.start_simulation()

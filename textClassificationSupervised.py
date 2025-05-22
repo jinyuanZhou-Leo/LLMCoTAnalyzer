@@ -20,7 +20,7 @@ class TextClassifier:
         self.__init_model()
         self.__train()
 
-    def __init_model(self):
+    def __init_model(self) -> None:
         if not torch.backends.mps.is_available():
             raise RuntimeError("MPS device not found. Requires macOS 12.3+ and Apple Silicon")
         logger.info("Initializing pretrained model and tokenizer...")
@@ -47,7 +47,7 @@ class TextClassifier:
         train_pbar.update(20)
 
         # 3. 训练带 class_weight 的逻辑回归
-        self.clf = LogisticRegression(class_weight="balanced", max_iter=1000)
+        self.clf = LogisticRegression(class_weight="balanced", max_iter=1500)
         self.clf.fit(X_train, y_train)
         train_pbar.update(50)
 
@@ -70,13 +70,13 @@ class TextClassifier:
                 embeddings.append(pooled)
         return torch.cat(embeddings).cpu().numpy()
 
-    def get_prediction(self, text):
+    def get_prediction(self, text: str):
         X_new = self.__embed([text], self.batch_size)
         prob = np.around(self.clf.predict_proba(X_new)[:, 1], decimals=3).tolist()[0]
         label = 1 if prob >= 0.5 else 0
         return label, prob
 
-    def get_predictions(self, text_list):
+    def get_predictions(self, text_list: list):
         X_new = self.__embed(text_list, self.batch_size)
         probs = np.around(self.clf.predict_proba(X_new)[:, 1], 3).tolist()
         labels = [1 if p >= 0.5 else 0 for p in probs]
@@ -84,6 +84,7 @@ class TextClassifier:
 
 
 if __name__ == "__main__":
+    logger.warning("This is a demo script, this module is not meant to be run directly.")
     classifier = TextClassifier(
         model_name="Alibaba-NLP/gte-multilingual-base",
         train_batch_path="train.csv",

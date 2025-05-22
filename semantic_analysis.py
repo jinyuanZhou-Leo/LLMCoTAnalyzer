@@ -1,4 +1,5 @@
 from LLMManager import TextEmbeddingManager
+from textClassificationSupervised import TextClassifier
 from sentence_transformers import SentenceTransformer, util
 from sklearn.ensemble import IsolationForest
 from loguru import logger
@@ -27,8 +28,10 @@ class SemanticChunks:
             self.text_embedding_model = self.__init_text_embedding_model()
         elif self.method == "SBERT":
             self.sbert_model = self.__init_SBERT_model()
+        elif self.method == "SupervisedClassification":
+            self.supervised_model = self.__init_supervised_model()
         else:
-            raise ValueError(f"Invalid method: {method} Choose from 'TextEmbedding' or 'SBERT'")
+            raise ValueError(f"Invalid method: {method}.")
 
     def __str__(self):
         return self.content
@@ -48,6 +51,14 @@ class SemanticChunks:
     def __init_SBERT_model(self) -> SentenceTransformer:
         # return SentenceTransformer("all-MiniLM-L6-v2")
         return SentenceTransformer("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
+
+    def __init_supervised_model(self) -> TextClassifier:
+        return TextClassifier(
+            model_name="Alibaba-NLP/gte-multilingual-base",
+            train_batch_path="train.csv",
+            eval_batch_path="val.csv",
+            batch_size=16,
+        )
 
     def __split_into_chunks(self, text: str):
         """
@@ -78,21 +89,51 @@ class SemanticChunks:
 
         return right_outliers
 
-    def identify_concept(self, concepts: list) -> list:
-        similarities = self.get_similarity(concepts)
-        outliers = self.__detect_outliers_isolation_forest(similarities)
-        logger.info(f"{len(outliers)} outliers detected: {outliers}")
-        return outliers
+    def count_concept(self, concepts: list) -> list:
+        if self.method != "SupervisedClassification":
+            similarities = self.get_similarity(concepts)
+            outliers_cnt = self.__detect_outliers_isolation_forest(similarities)
+        else:
+            outliers_cnt = self.get_similarity()
+        logger.info(f"{outliers_cnt} outliers detected.")
+        return outliers_cnt
 
-    def get_similarity(self, concepts):
+    def get_similarity(self, concepts: list = None):
+        """
+        The composited method to get the similarity of each chunk with the concepts.
+        """
         if self.method == "SBERT":
             return self.__get_similarity_SBERT(concepts)
         elif self.method == "TextEmbedding":
             return self.__get_similarity_TextEmbedding(concepts)
+        elif self.method == "SupervisedClassification":
+            return self.__get_similarity_SupervisedClassification()
         else:
-            raise ValueError("Invalid method. Choose 'SBERT' or 'TextEmbedding'.")
+            raise ValueError("Invalid method. Choose 'SBERT', 'TextEmbedding' or 'SupervisedClassification'.")
+
+    def __get_similarity_SupervisedClassification(self):
+        """
+        Get the amplified sum of cosine similarity of each chunk using the Alibaba-NLP/gte-multilingual-base model
+
+        :return: count of chunk that are filtered out by the model
+
+        """
+        cnt = 0
+        for chunk in tqdm(
+            self.chunks, desc="Classifying chunks with gte-text-embedding", leave=True, total=len(self.chunks)
+        ):
+            if self.supervised_model.get_prediction(chunk)[0] == 1:
+                cnt += 1
+        return cnt
 
     def __get_similarity_SBERT(self, concepts):
+        """
+        Get the amplified sum of cosine similarity of each chunk using the Sentence Transformer model(all-MiniLM-L6-v2)
+
+        :param concepts: List of concepts to compare with
+        :return: List of amplified sum of cosine similarity for each chunk
+
+        """
         concept_embeddings = self.get_concept_embeddings(concepts, self.sbert_model)
         similarities = []
         for chunk in tqdm(self.chunks, desc="Processing Chunks with SBERT", leave=True, total=len(self.chunks)):
@@ -117,13 +158,20 @@ class SemanticChunks:
     @staticmethod
     @memory.cache
     def get_concept_embeddings(concepts: list[str], embedding_model):
-        """Text Embedding method"""
+        """Get the text embeddings for concepts list"""
         if isinstance(embedding_model, TextEmbeddingManager):
             return np.array([embedding_model.get_embedding(c) for c in concepts])
         elif isinstance(embedding_model, SentenceTransformer):
             return embedding_model.encode(concepts, normalize_embeddings=True)
 
     def __get_similarity_TextEmbedding(self, concepts):
+        """
+        Get the amplified sum of cosine similarity of each chunk using the text-embedding-v3 model from Alibaba API
+
+        :param concepts: List of concepts to compare with
+        :return: List of amplified sum of cosine similarity for each chunk
+
+        """
         concept_embeddings = self.get_concept_embeddings(concepts, self.text_embedding_model)
         similarities = []
         chunk_embeddings = []
@@ -142,6 +190,7 @@ class SemanticChunks:
 
 
 if __name__ == "__main__":
+    logger.warning("This is a demo script, this module is not meant to be run directly.")
     concepts = [
         "Is it right",
         "There is a mistake in my answer",
@@ -165,6 +214,5 @@ if __name__ == "__main__":
     I should present the answer step by step to make it clear. Also, maybe they want to know why the formula works, but since the question is straightforward, keeping it concise but correct is best.
     Let me make sure I didn't mix up any exponents. No, 2+1 is 3, so that's right. Alright, that should be it."""
     test_semantic_chunk = SemanticChunks(content=test_CoT, method="TextEmbedding")
-    outliers = test_semantic_chunk.identify_concept(concepts=concepts)
-    logger.success(f"There are {len(outliers)}, Outliers: {outliers}")
-    print(type(outliers))
+    outliers_cnt = test_semantic_chunk.count_concept(concepts=concepts)
+    logger.success(f"There are {outliers_cnt} outliers")
