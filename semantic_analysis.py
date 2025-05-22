@@ -2,9 +2,9 @@ from LLMManager import TextEmbeddingManager
 from textClassificationSupervised import TextClassifier
 from sentence_transformers import SentenceTransformer, util
 from sklearn.ensemble import IsolationForest
+import csv
 from loguru import logger
 from tqdm import tqdm
-import os
 import re
 import numpy as np
 import logging
@@ -18,10 +18,16 @@ logger.add(lambda msg: tqdm.write(msg, end=""), level="INFO", colorize=True)
 
 class SemanticChunks:
 
-    def __init__(self, content: str, model: SentenceTransformer | TextEmbeddingManager | TextClassifier):
+    def __init__(
+        self,
+        content: str,
+        model: SentenceTransformer | TextEmbeddingManager | TextClassifier,
+        ask_when_unsure: bool = False,
+    ):
         self.content = content
         self.chunks = self.__split_into_chunks(content)
         self.model = model
+        self.ask_when_unsure = ask_when_unsure
         if isinstance(self.model, TextEmbeddingManager):
             self.method = "TextEmbedding"
         elif isinstance(self.model, SentenceTransformer):
@@ -51,7 +57,8 @@ class SemanticChunks:
         for i in range(0, len(chunks) - 1, 2):
             sent = chunks[i].strip() + chunks[i + 1]
             if sent.strip():
-                sentences.append(sent.strip())
+                if not re.fullmatch(r"^[\d\W_]+$", sent.strip()):
+                    sentences.append(sent.strip())
         return sentences
 
     def __detect_outliers_isolation_forest(self, data):
@@ -107,6 +114,14 @@ class SemanticChunks:
             logger.debug(f"Label: {label}, Prob: {prob}")
             if label == 1:
                 cnt += 1
+            if self.ask_when_unsure and 0.4 <= prob <= 0.7:
+                logger.warning(f"Chunk: {chunk}")
+                logger.warning(f"Predicted Prob: {prob}, Please check it manually (1|0)")
+                user_answer = input("Please enter 1 for True, 0 for False: ")
+                with open(self.model.train_batch_path, "a", newline="", encoding="utf-8") as f:
+                    writer = csv.writer(f)
+                    writer.writerow([chunk, int(user_answer)])
+
         return cnt
 
     def __get_similarity_SBERT(self, concepts):

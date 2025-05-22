@@ -9,8 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
-# Generated CSV
+# Generated file
 *.CSV
+*.log
 
 # joblib
 cachedir/*

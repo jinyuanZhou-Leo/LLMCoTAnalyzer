@@ -78,13 +78,13 @@ class TextClassifier:
     def get_prediction(self, text: str):
         X_new = self.__embed([text], self.batch_size)
         prob = np.around(self.clf.predict_proba(X_new)[:, 1], decimals=3).tolist()[0]
-        label = 1 if prob >= 0.5 else 0
+        label = 1 if prob >= 0.7 else 0
         return label, prob
 
     def get_predictions(self, text_list: list):
         X_new = self.__embed(text_list, self.batch_size)
         probs = np.around(self.clf.predict_proba(X_new)[:, 1], 3).tolist()
-        labels = [1 if p >= 0.5 else 0 for p in probs]
+        labels = [1 if p >= 0.7 else 0 for p in probs]
         return labels, probs
 
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         eval_batch_path="val.csv",
         batch_size=8,
     )
-    text = "This is a test text."
+    text = "000000 gives approx 0."
     label, prob = classifier.get_prediction(text)
     print(f"Text: {text}, Label: {label}, Probability: {prob}")
 

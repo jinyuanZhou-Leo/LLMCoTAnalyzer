@@ -23,6 +23,7 @@ class Simulation:
         filter_concept: list = None,
         embedding_method: str = "SupervisedClassification",
         output_path: str = f"simulation_results-{datetime.now().strftime("%m-%d-%H:%M:%S")}.csv",
+        ask_when_unsure: bool = False,
     ):
         self.model_list = model_list
         self.repetition = repetition
@@ -31,6 +32,7 @@ class Simulation:
         self.concept = filter_concept
         self.embedding_method = embedding_method
         self.output_path = output_path
+        self.ask_when_unsure = ask_when_unsure
         if self.embedding_method == "TextEmbedding":
             self.model = self.__init_text_embedding_model()
         elif self.embedding_method == "SBERT":
@@ -98,7 +100,9 @@ class Simulation:
                                     f"Simulation Start | Model:{model_name}, Question: {question_index+1}, Repetition: {i + 1}"
                                 )
                                 chat_completion = model.get_chat_completion(question, verbose=True)
-                                reasoning = SemanticChunks(chat_completion["reasoning"], model=self.model)
+                                reasoning = SemanticChunks(
+                                    chat_completion["reasoning"], model=self.model, ask_when_unsure=self.ask_when_unsure
+                                )
                                 outliers_cnt = reasoning.count_concept(self.concept)
                                 logger.success(f"Finished | Outliers_Cnt: {outliers_cnt}")
                                 writer.writerow(
@@ -143,6 +147,7 @@ if __name__ == "__main__":
         question_list=question_list,
         system_prompt=system_prompt,
         embedding_method="SupervisedClassification",
+        ask_when_unsure=True,
     )
     # filter_concept=concepts
     # ! if we use supervised classification, we need to provide the concepts
