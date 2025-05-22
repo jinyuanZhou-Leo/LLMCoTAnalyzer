@@ -9,7 +9,7 @@ logger.add(sys.stdout, level="INFO", colorize=True)
 model = None
 try:
     model = LLMManager(
-        model_name="qwen3-1.7b",
+        model_name="qwen3-8b",
         system_prompt="You are a helpful assistant.",
         api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         api_key=os.getenv("DASHSCOPE_API_KEY"),
