@@ -56,7 +56,7 @@ class Simulation:
                                     f"Simulation Start | Model:{model_name}, Question: {question}, Repetition: {i + 1}"
                                 )
                                 chat_completion = model.get_chat_completion(question, verbose=True)
-                                reasoning = SemanticChunks(chat_completion["reasoning"])
+                                reasoning = SemanticChunks(chat_completion["reasoning"], method="SBERT")
                                 outliers = reasoning.identify_concept(self.concept)
                                 logger.success(f"Finished | Outliers_Cnt: {len(outliers)}")
                                 writer.writerow(

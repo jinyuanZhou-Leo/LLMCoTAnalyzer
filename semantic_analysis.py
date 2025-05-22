@@ -7,6 +7,11 @@ from tqdm import tqdm
 import os
 import re
 import numpy as np
+import logging
+
+logging.getLogger("transformers.modeling_utils").setLevel(
+    logging.ERROR
+)  # ! Surpass the warning of SentenceTransformer partially initializing
 
 logger.remove()
 logger.add(lambda msg: tqdm.write(msg, end=""), level="INFO", colorize=True)
@@ -41,7 +46,8 @@ class SemanticChunks:
             return None
 
     def __init_SBERT_model(self) -> SentenceTransformer:
-        return SentenceTransformer("all-MiniLM-L6-v2")
+        # return SentenceTransformer("all-MiniLM-L6-v2")
+        return SentenceTransformer("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
 
     def __split_into_chunks(self, text: str):
         """
