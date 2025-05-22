@@ -20,7 +20,7 @@ class Simulation:
         question_list: list[str],
         system_prompt: str,
         filter_concept: list = None,
-        embedding_method: str = "TextEmbedding",
+        embedding_method: str = "SupervisedClassification",
         output_path: str = f"simulation_results-{datetime.now().strftime("%m-%d-%H:%M:%S")}.csv",
     ):
         self.model_list = model_list
@@ -69,8 +69,14 @@ class Simulation:
                 csvfile, fieldnames=["Model", "Question", "Repetition", "Count", "Reasoning", "Timestamp"]
             )
             writer.writeheader()
-            with tqdm(self.model_list, desc="Overall Simulation", leave=False, position=0) as overallpbar:
-                for model_info in overallpbar:
+            with tqdm(
+                desc="Simulation Progress",
+                leave=False,
+                position=0,
+                total=len(self.model_list) * len(self.question_list) * self.repetition,
+                bar_format="{l_bar}{bar} | {percentage:3.1f}% {r_bar}",
+            ) as overallpbar:
+                for model_info in self.model_list:
                     model_name = model_info[0]
                     api_url = model_info[1]
                     api_key = os.getenv(model_info[2])
@@ -78,15 +84,17 @@ class Simulation:
                         model_name=model_name, system_prompt=self.system_prompt, api_url=api_url, api_key=api_key
                     )
                     model.set_thinking(enable_thinking=True)
-                    total_iterations = len(self.question_list) * self.repetition
                     with tqdm(
-                        total=total_iterations, desc=f"Processing {model_name}", position=1, leave=True
+                        total=len(self.question_list) * self.repetition,
+                        desc=f"Processing {model_name}",
+                        position=1,
+                        leave=True,
                     ) as modelpbar:
-                        for question in self.question_list:
+                        for question_index, question in enumerate(self.question_list):
                             for i in range(self.repetition):
                                 model.initialize_context()  # clear all the context
                                 logger.warning(
-                                    f"Simulation Start | Model:{model_name}, Question: {question}, Repetition: {i + 1}"
+                                    f"Simulation Start | Model:{model_name}, Question: {question_index+1}, Repetition: {i + 1}"
                                 )
                                 chat_completion = model.get_chat_completion(question, verbose=True)
                                 reasoning = SemanticChunks(chat_completion["reasoning"], model=self.model)
@@ -104,7 +112,8 @@ class Simulation:
                                 )
                                 csvfile.flush()  # 确保实时写入
                                 modelpbar.update(1)
-
+                                overallpbar.update(1)
+        logger.success(f"\n\n\nSimulation completed. Results saved to {self.output_path}.")
 
 if __name__ == "__main__":
     model_list = [

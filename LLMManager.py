@@ -1,6 +1,7 @@
 from openai import OpenAI, Stream
 from loguru import logger
 import sys
+from tqdm import tqdm
 import numpy as np
 
 from openai.types.chat.chat_completion import ChatCompletion
@@ -39,10 +40,10 @@ class LLMManager:
                 base_url=self.api_url,
             )
         except Exception as e:
-            logger.error(f"Failed to initialize OpenAI client: {e}")
+            logger.error(f"Failed to initialize API client: {e}")
             raise e
         else:
-            logger.success("OpenAI client initialized successfully")
+            logger.success(f'Client for "{self.model_name}" is initialized successfully')
 
         self.initialize_context()
 
@@ -92,7 +93,7 @@ class LLMManager:
             is_answering = False  # a flag indicates whether the model has already begin answering
             if not verbose:
                 print("Thinking: ", end="")
-            for chunk in completion:
+            for chunk in tqdm(completion, disable=verbose, desc="Collecting response", leave=False):
                 delta = chunk.choices[0].delta
                 # collect the reasoning content
                 if hasattr(delta, "reasoning_content") and delta.reasoning_content is not None:
@@ -112,7 +113,7 @@ class LLMManager:
                     answer_content += delta.content
         else:
             # Thinking mode is off
-            for chunk in completion:
+            for chunk in tqdm(completion, disable=verbose, desc="Collecting response", leave=False):
                 if not chunk.choices:
                     if not verbose:
                         print("\nUsage:")
