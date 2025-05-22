@@ -55,7 +55,7 @@ class LLMManager:
         Set the thinking mode for the model.
         """
         self.extra_body["enable_thinking"] = enable_thinking
-        logger.info(f"Thinking mode set to: {enable_thinking}")
+        logger.debug(f"Thinking mode set to: {enable_thinking}")
 
     def __add_context(self, role: str, content: str):
         """
