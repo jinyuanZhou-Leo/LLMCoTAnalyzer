@@ -58,7 +58,7 @@ class TextClassifier:
 
         # 4. 在验证集上评估
         y_pred = self.clf.predict(X_val)
-        logger.debug(classification_report(y_val, y_pred, zero_division=0))
+        logger.debug(f"\n{classification_report(y_val, y_pred, zero_division=0)}")
         train_pbar.update(20)
         train_pbar.close()
 
