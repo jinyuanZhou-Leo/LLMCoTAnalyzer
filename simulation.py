@@ -1,6 +1,8 @@
 from semantic_analysis import SemanticChunks
-from LLMManager import LLMManager
+from LLMManager import LLMManager, TextEmbeddingManager
 from loguru import logger
+from textClassificationSupervised import TextClassifier
+from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 from datetime import datetime
 import os
@@ -8,7 +10,6 @@ import csv
 
 logger.remove()
 logger.add(lambda msg: tqdm.write(msg, end=""), level="INFO", colorize=True)
-
 
 class Simulation:
 
@@ -29,6 +30,38 @@ class Simulation:
         self.concept = filter_concept
         self.embedding_method = embedding_method
         self.output_path = output_path
+        if self.embedding_method == "TextEmbedding":
+            self.model = self.__init_text_embedding_model()
+        elif self.embedding_method == "SBERT":
+            self.model = self.__init_SBERT_model()
+        elif self.embedding_method == "SupervisedClassification":
+            self.model = self.__init_supervised_model()
+        else:
+            raise ValueError(f"Invalid method: {embedding_method}.")
+
+    def __init_text_embedding_model(self) -> TextEmbeddingManager | None:
+        try:
+            return TextEmbeddingManager(
+                model_name="text-embedding-v3",
+                api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+                api_key=os.getenv("DASHSCOPE_API_KEY"),
+                dimensions=1024,
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize text_embedding_model: {e}")
+            return None
+
+    def __init_SBERT_model(self) -> SentenceTransformer:
+        return SentenceTransformer("all-MiniLM-L6-v2")
+        # return SentenceTransformer("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
+
+    def __init_supervised_model(self) -> TextClassifier:
+        return TextClassifier(
+            model_name="Alibaba-NLP/gte-multilingual-base",
+            train_batch_path="train.csv",
+            eval_batch_path="val.csv",
+            batch_size=16,
+        )
 
     def start_simulation(self):
         with open(self.output_path, "w", newline="") as csvfile:
@@ -56,7 +89,7 @@ class Simulation:
                                     f"Simulation Start | Model:{model_name}, Question: {question}, Repetition: {i + 1}"
                                 )
                                 chat_completion = model.get_chat_completion(question, verbose=True)
-                                reasoning = SemanticChunks(chat_completion["reasoning"], method="SBERT")
+                                reasoning = SemanticChunks(chat_completion["reasoning"], model=self.model)
                                 outliers_cnt = reasoning.count_concept(self.concept)
                                 logger.success(f"Finished | Outliers_Cnt: {outliers_cnt}")
                                 writer.writerow(

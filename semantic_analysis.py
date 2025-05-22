@@ -3,7 +3,6 @@ from textClassificationSupervised import TextClassifier
 from sentence_transformers import SentenceTransformer, util
 from sklearn.ensemble import IsolationForest
 from loguru import logger
-from joblib import Memory
 from tqdm import tqdm
 import os
 import re
@@ -15,50 +14,31 @@ logging.getLogger("transformers.modeling_utils").setLevel(
 )  # ! Surpass the warning of SentenceTransformer partially initializing
 
 logger.remove()
-logger.add(lambda msg: tqdm.write(msg, end=""), level="INFO", colorize=True)
-memory = Memory(location="./cachedir", verbose=0)
+logger.add(lambda msg: tqdm.write(msg, end=""), level="DEBUG", colorize=True)
 
 class SemanticChunks:
 
-    def __init__(self, content: str, method: str = "TextEmbedding"):
+    def __init__(self, content: str, model: SentenceTransformer | TextEmbeddingManager | TextClassifier):
         self.content = content
         self.chunks = self.__split_into_chunks(content)
-        self.method = method
-        if self.method == "TextEmbedding":
-            self.text_embedding_model = self.__init_text_embedding_model()
-        elif self.method == "SBERT":
-            self.sbert_model = self.__init_SBERT_model()
-        elif self.method == "SupervisedClassification":
-            self.supervised_model = self.__init_supervised_model()
-        else:
-            raise ValueError(f"Invalid method: {method}.")
+        self.model = model
+        if isinstance(self.model, TextEmbeddingManager):
+            self.method = "TextEmbedding"
+        elif isinstance(self.model, SentenceTransformer):
+            self.method = "SBERT"
+        elif isinstance(self.model, TextClassifier):
+            self.method = "SupervisedClassification"
 
     def __str__(self):
         return self.content
 
-    def __init_text_embedding_model(self) -> TextEmbeddingManager | None:
-        try:
-            return TextEmbeddingManager(
-                model_name="text-embedding-v3",
-                api_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-                api_key=os.getenv("DASHSCOPE_API_KEY"),
-                dimensions=1024,
-            )
-        except Exception as e:
-            logger.error(f"Failed to initialize text_embedding_model: {e}")
-            return None
-
-    def __init_SBERT_model(self) -> SentenceTransformer:
-        # return SentenceTransformer("all-MiniLM-L6-v2")
-        return SentenceTransformer("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
-
-    def __init_supervised_model(self) -> TextClassifier:
-        return TextClassifier(
-            model_name="Alibaba-NLP/gte-multilingual-base",
-            train_batch_path="train.csv",
-            eval_batch_path="val.csv",
-            batch_size=16,
-        )
+    @staticmethod
+    def get_concept_embeddings(concepts: list[str], embedding_model):
+        """Get the text embeddings for concepts list"""
+        if isinstance(embedding_model, TextEmbeddingManager):
+            return np.array([embedding_model.get_embedding(c) for c in concepts])
+        elif isinstance(embedding_model, SentenceTransformer):
+            return embedding_model.encode(concepts, normalize_embeddings=True)
 
     def __split_into_chunks(self, text: str):
         """
@@ -122,7 +102,10 @@ class SemanticChunks:
         for chunk in tqdm(
             self.chunks, desc="Classifying chunks with gte-text-embedding", leave=True, total=len(self.chunks)
         ):
-            if self.supervised_model.get_prediction(chunk)[0] == 1:
+            label, prob = self.model.get_prediction(chunk)
+            logger.debug(f"Chunk: {chunk}")
+            logger.debug(f"Label: {label}, Prob: {prob}")
+            if label == 1:
                 cnt += 1
         return cnt
 
@@ -134,10 +117,10 @@ class SemanticChunks:
         :return: List of amplified sum of cosine similarity for each chunk
 
         """
-        concept_embeddings = self.get_concept_embeddings(concepts, self.sbert_model)
+        concept_embeddings = SemanticChunks.get_concept_embeddings(concepts, self.model)
         similarities = []
         for chunk in tqdm(self.chunks, desc="Processing Chunks with SBERT", leave=True, total=len(self.chunks)):
-            chunk_embedding = self.sbert_model.encode(chunk, normalize_embeddings=True)
+            chunk_embedding = self.model.encode(chunk, normalize_embeddings=True)
             chunk_similarities = util.cos_sim(chunk_embedding, concept_embeddings)[0].tolist()
             # print the average similarity
             chunk_compositive_similarities = self.amplified_sum(chunk_similarities)
@@ -146,23 +129,13 @@ class SemanticChunks:
             similarities.append(chunk_compositive_similarities)
         return self.__normalize(similarities)
 
-    def amplified_sum(self, arr):
-        global concepts
+    def amplified_sum(self, arr) -> float:
         tmp = [i ** (1 / 4) for i in range(len(arr))]
         return sum(arr)
 
     def __normalize(self, arr: list) -> list:
         arr = np.array(arr)
         return (arr - arr.min()) / (arr.max() - arr.min()).tolist()
-
-    @staticmethod
-    @memory.cache
-    def get_concept_embeddings(concepts: list[str], embedding_model):
-        """Get the text embeddings for concepts list"""
-        if isinstance(embedding_model, TextEmbeddingManager):
-            return np.array([embedding_model.get_embedding(c) for c in concepts])
-        elif isinstance(embedding_model, SentenceTransformer):
-            return embedding_model.encode(concepts, normalize_embeddings=True)
 
     def __get_similarity_TextEmbedding(self, concepts):
         """
@@ -172,11 +145,11 @@ class SemanticChunks:
         :return: List of amplified sum of cosine similarity for each chunk
 
         """
-        concept_embeddings = self.get_concept_embeddings(concepts, self.text_embedding_model)
+        concept_embeddings = SemanticChunks.get_concept_embeddings(concepts, self.model)
         similarities = []
         chunk_embeddings = []
         for chunk in tqdm(self.chunks, desc="Text 2 Vec", leave=True, total=len(self.chunks)):
-            chunk_embeddings.append(self.text_embedding_model.get_embedding(chunk))
+            chunk_embeddings.append(self.model.get_embedding(chunk))
         for chunk_embedding in tqdm(
             chunk_embeddings, desc="Processing Chunks Similarity", leave=True, total=len(chunk_embeddings)
         ):
@@ -213,6 +186,12 @@ if __name__ == "__main__":
     The user might be a student learning calculus, so explaining the power rule clearly would help. Maybe they need this for homework or an exam.
     I should present the answer step by step to make it clear. Also, maybe they want to know why the formula works, but since the question is straightforward, keeping it concise but correct is best.
     Let me make sure I didn't mix up any exponents. No, 2+1 is 3, so that's right. Alright, that should be it."""
-    test_semantic_chunk = SemanticChunks(content=test_CoT, method="TextEmbedding")
+    text_classifier = TextClassifier(
+        model_name="Alibaba-NLP/gte-multilingual-base",
+        train_batch_path="train.csv",
+        eval_batch_path="val.csv",
+        batch_size=16,
+    )
+    test_semantic_chunk = SemanticChunks(content=test_CoT, model=text_classifier)
     outliers_cnt = test_semantic_chunk.count_concept(concepts=concepts)
     logger.success(f"There are {outliers_cnt} outliers")

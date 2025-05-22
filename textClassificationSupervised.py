@@ -8,7 +8,7 @@ import torch
 import numpy as np
 
 logger.remove()
-logger.add(lambda msg: tqdm.write(msg, end=""), level="INFO", colorize=True)
+logger.add(lambda msg: tqdm.write(msg, end=""), level="DEBUG", colorize=True)
 
 
 class TextClassifier:
@@ -24,10 +24,15 @@ class TextClassifier:
         if not torch.backends.mps.is_available():
             raise RuntimeError("MPS device not found. Requires macOS 12.3+ and Apple Silicon")
         logger.info("Initializing pretrained model and tokenizer...")
-        self.tokenizer = AutoTokenizer.from_pretrained("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
-        self.model = AutoModel.from_pretrained("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
-        self.model = self.model.to("mps")
-        self.model.eval()
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
+            self.model = AutoModel.from_pretrained("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
+            self.model = self.model.to("mps")
+            self.model.eval()
+        except Exception as e:
+            raise RuntimeError(f"Failed to load model or tokenizer: {e}")
+        else:
+            logger.info("Model and tokenizer initialized successfully.")
 
     def __train(self):
         train_pbar = tqdm(total=100, desc="Training", position=0, leave=True)
@@ -53,7 +58,7 @@ class TextClassifier:
 
         # 4. 在验证集上评估
         y_pred = self.clf.predict(X_val)
-        print(classification_report(y_val, y_pred, zero_division=0))
+        logger.debug(classification_report(y_val, y_pred, zero_division=0))
         train_pbar.update(20)
         train_pbar.close()
 
