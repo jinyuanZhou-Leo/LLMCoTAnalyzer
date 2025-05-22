@@ -120,7 +120,7 @@ class SemanticChunks:
                 user_answer = input("Please enter 1 for True, 0 for False: ")
                 with open(self.model.train_batch_path, "a", newline="", encoding="utf-8") as f:
                     writer = csv.writer(f)
-                    writer.writerow([chunk, int(user_answer)])
+                    writer.writerow([f'"{chunk}"', int(user_answer)])
 
         return cnt
 

@@ -11,7 +11,6 @@ import csv
 logger.remove()
 logger.add(lambda msg: tqdm.write(msg, end=""), level="DEBUG", colorize=True)
 logger.add("simulation.log", level="TRACE", rotation="150KB")
-
 class Simulation:
 
     def __init__(
