@@ -23,6 +23,8 @@ class TextClassifier:
     def __init_model(self) -> None:
         if not torch.backends.mps.is_available():
             raise RuntimeError("MPS device not found. Requires macOS 12.3+ and Apple Silicon")
+        else:
+            logger.success("MPS device is detected, training is accelerated using Apple Neural Engine")
         logger.info("Initializing pretrained model and tokenizer...")
         try:
             self.tokenizer = AutoTokenizer.from_pretrained("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
@@ -61,6 +63,7 @@ class TextClassifier:
         logger.debug(f"\n{classification_report(y_val, y_pred, zero_division=0)}")
         train_pbar.update(20)
         train_pbar.close()
+        logger.success("Finished Training")
 
     def __embed(self, text_list, batch_size):
         """对一批文本计算句向量（取池化后输出均值）"""

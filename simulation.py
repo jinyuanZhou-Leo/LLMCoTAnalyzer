@@ -10,7 +10,7 @@ import csv
 
 logger.remove()
 logger.add(lambda msg: tqdm.write(msg, end=""), level="DEBUG", colorize=True)
-logger.add("simulation.log", level="TRACE", rotation="150KB")
+logger.add("simulation.log", level="TRACE", rotation="300KB")
 class Simulation:
 
     def __init__(
@@ -62,7 +62,7 @@ class Simulation:
             model_name="Alibaba-NLP/gte-multilingual-base",
             train_batch_path="train.csv",
             eval_batch_path="val.csv",
-            batch_size=16,
+            batch_size=32,
         )
 
     def start_simulation(self):
@@ -149,5 +149,5 @@ if __name__ == "__main__":
         ask_when_unsure=True,
     )
     # filter_concept=concepts
-    # ! if we use supervised classification, we need to provide the concepts
+    # ! if we use supervised classification, we don't need to provide the concepts
     simulation.start_simulation()

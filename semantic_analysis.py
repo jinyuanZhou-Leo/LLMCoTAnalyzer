@@ -117,10 +117,13 @@ class SemanticChunks:
             if self.ask_when_unsure and 0.4 <= prob <= 0.7:
                 logger.warning(f"Chunk: {chunk}")
                 logger.warning(f"Predicted Prob: {prob}, Please check it manually (1|0)")
-                user_answer = input("Please enter 1 for True, 0 for False: ")
-                with open(self.model.train_batch_path, "a", newline="", encoding="utf-8") as f:
-                    writer = csv.writer(f)
-                    writer.writerow([f'"{chunk}"', int(user_answer)])
+                user_answer = input("Answer (0 False | 1 True | 2 Skip): ")
+                if not user_answer == 2:
+                    continue
+                else:
+                    with open(self.model.train_batch_path, "a", newline="", encoding="utf-8") as f:
+                        writer = csv.writer(f)
+                        writer.writerow([f'"{chunk}"', int(user_answer)])
 
         return cnt
 
