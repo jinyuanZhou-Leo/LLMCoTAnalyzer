@@ -1,11 +1,18 @@
 import ttkbootstrap as ttk
 import tkinter as tk
+from tkinter import messagebox
 import json
+import sys
 from loguru import logger
 from ttkbootstrap.tableview import Tableview
 from threading import Thread
 from simulation import Simulation
 from ttkbootstrap.constants import *
+
+
+logger.remove()
+logger.add(sys.stdout, level="INFO", colorize=True)
+logger.add("simulationGUI.log", level="TRACE", rotation="300KB")
 
 
 class SimulationGUI(ttk.Window):
@@ -35,7 +42,7 @@ class SimulationGUI(ttk.Window):
         style.configure(".", font="Helvetica")
         self.simulation_cofig = {}
         self.create_widgets()
-        logger.add(self.update_log, level="DEBUG", colorize=False)
+        logger.add(self.update_log, level="INFO", colorize=False, format="{level} - {message}")
 
     def create_widgets(self):
         self._create_model_config_widgets()
@@ -156,8 +163,29 @@ class SimulationGUI(ttk.Window):
         )
         ask_when_unsure_checkbutton.pack(anchor=tk.W, pady=5)
 
+    def get_config(self):
+        return {
+            "model_list": [row.values for row in self.model_table.get_rows()],  # 直接遍历rows属性
+            "repetition": int(self.repetition_spin.get()),
+            "question_list": [row.values[0] for row in self.question_table.get_rows()],
+            "system_prompt": "You are a helpful assistant.",
+            "embedding_method": "SupervisedClassification",
+            "ask_when_unsure": self.ask_when_unsure_var.get(),
+        }
+
     def start_simulation(self):
-        raise NotImplementedError()
+        self.start_btn.config(state=tk.DISABLED)
+        Thread(target=self._run).start()
+
+    def _run(self):
+        try:
+            self.simulation = Simulation(**self.get_config())
+            self.simulation.start_simulation()
+        except Exception as e:
+            logger.error(f"Simulation failed: {e}")
+            messagebox.showerror("Error", f"Simulation failed: {e}")
+        finally:
+            self.start_btn.config(state=tk.NORMAL)
 
     def _load_default_table_content(self, table, content):
         for c in content:
