@@ -121,6 +121,14 @@ class Simulation:
                     logger.success(f'Finishing simulation for "{model_name}"')
         logger.success(f"\n\n\nSimulation completed. Results saved to {self.output_path}.")
 
+    def terminate_simulation(self):
+        raise ForceTerminateException("Simulation terminated by user.")
+
+
+class ForceTerminateException(Exception):
+    pass
+
+
 if __name__ == "__main__":
     model_list = [
         ["qwen3-0.6b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"],
