@@ -187,6 +187,8 @@ if __name__ == "__main__":
         ("qwen3-1.7b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
         ("qwen3-4b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
         ("qwen3-8b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
+        ("qwen3-14b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
+        ("qwen3-32b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
     ]
     question_list = [("What is the integral of x^2?",), ("What is the derivative of (lnx)^2?",)]
     app = SimulationGUI(model_list=model_list, question_list=question_list)

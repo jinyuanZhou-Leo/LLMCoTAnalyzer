@@ -86,6 +86,7 @@ class Simulation:
                         model_name=model_name, system_prompt=self.system_prompt, api_url=api_url, api_key=api_key
                     )
                     model.set_thinking(enable_thinking=True)
+                    logger.success(f'Starting simulation for "{model_name}"')
                     with tqdm(
                         total=len(self.question_list) * self.repetition,
                         desc=f"Processing {model_name}",
@@ -95,8 +96,8 @@ class Simulation:
                         for question_index, question in enumerate(self.question_list):
                             for i in range(self.repetition):
                                 model.initialize_context()  # clear all the context
-                                logger.warning(
-                                    f"Simulation Start | Model:{model_name}, Question: {question_index+1}, Repetition: {i + 1}"
+                                logger.info(
+                                    f"Task | Model:{model_name}, Question: {question_index+1}, Repetition: {i + 1}"
                                 )
                                 chat_completion = model.get_chat_completion(question, verbose=True)
                                 reasoning = SemanticChunks(
@@ -117,6 +118,7 @@ class Simulation:
                                 csvfile.flush()  # 确保实时写入
                                 modelpbar.update(1)
                                 overallpbar.update(1)
+                    logger.success(f'Finishing simulation for "{model_name}"')
         logger.success(f"\n\n\nSimulation completed. Results saved to {self.output_path}.")
 
 if __name__ == "__main__":
