@@ -13,7 +13,8 @@ logger.add(lambda msg: tqdm.write(msg, end=""), level="DEBUG", colorize=True)
 
 class TextClassifier:
 
-    def __init__(self, train_batch_path: str, eval_batch_path: str, batch_size: int = 8):
+    def __init__(self, model_name, train_batch_path: str, eval_batch_path: str, batch_size: int = 8):
+        self.model_name = model_name
         self.train_batch_path = train_batch_path
         self.eval_batch_path = eval_batch_path
         self.batch_size = batch_size
@@ -27,8 +28,8 @@ class TextClassifier:
             logger.success("MPS device is detected, training is accelerated using Apple Neural Engine")
         logger.info("Initializing pretrained model and tokenizer...")
         try:
-            self.tokenizer = AutoTokenizer.from_pretrained("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
-            self.model = AutoModel.from_pretrained("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
+            self.model = AutoModel.from_pretrained(self.model_name, trust_remote_code=True)
             self.model = self.model.to("mps")
             self.model.eval()
         except Exception as e:
@@ -94,6 +95,7 @@ class TextClassifier:
 if __name__ == "__main__":
     logger.warning("This is a demo script, this module is not meant to be run directly.")
     classifier = TextClassifier(
+        model_name="Alibaba-NLP/gte-multilingual-base",
         train_batch_path="train.csv",
         eval_batch_path="val.csv",
         batch_size=8,
