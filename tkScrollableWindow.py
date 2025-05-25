@@ -49,6 +49,7 @@ class tkScrollableWindow(ttk.Window):
 
         style = ttk.Style()
         style.configure(".", font="Helvetica")
+        self.protocol("WM_DELETE_WINDOW", self.on_close)  # 新增：绑定窗口关闭事件
 
     def _on_mousewheel(self, event):
         if self.canvas.winfo_height() < self.canvas.bbox("all")[3]:
@@ -58,6 +59,10 @@ class tkScrollableWindow(ttk.Window):
     def _update_scrollregion(self):
         self.scrollable_frame.update_idletasks()
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def on_close(self):
+        # 窗口关闭时显式销毁界面
+        self.destroy()
 
 
 if __name__ == "__main__":

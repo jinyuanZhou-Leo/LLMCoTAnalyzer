@@ -28,10 +28,9 @@ class SimulationGUI(tkScrollableWindow):
         self.model_list = model_list or []
         self.question_list = question_list or []
         self.simulation_cofig = {}
-        self.simulation_thread = None  # 新增：保存模拟线程引用
+        self.simulation_thread = None
         self.create_widgets()
         logger.add(self.update_log, level="INFO", colorize=False, format="{level} - {message}")
-        self.protocol("WM_DELETE_WINDOW", self.on_close)  # 新增：绑定窗口关闭事件
 
     def create_widgets(self):
         self._create_model_config_widgets()
@@ -174,11 +173,6 @@ class SimulationGUI(tkScrollableWindow):
     def _create_log_widget(self):
         self.log_text = tk.Text(self.scrollable_frame, height=15)
         self.log_text.pack(fill=BOTH, expand=True)
-
-    def on_close(self):
-        """处理窗口关闭事件"""
-        # 窗口关闭时显式销毁界面
-        self.destroy()
 
 
 if __name__ == "__main__":
