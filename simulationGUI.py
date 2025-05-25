@@ -5,7 +5,7 @@ import json
 import sys
 from loguru import logger
 from threading import Thread
-from simulation import Simulation
+from simulation import *
 from ttkbootstrap.constants import *
 from tkScrollableWindow import tkScrollableWindow
 from tkTableView import ModernTableView
@@ -14,7 +14,6 @@ from tkTableView import ModernTableView
 logger.remove()
 logger.add(sys.stdout, level="INFO", colorize=True)
 logger.add("simulationGUI.log", level="TRACE", rotation="300KB")
-
 
 class SimulationGUI(tkScrollableWindow):
     def __init__(
@@ -37,13 +36,22 @@ class SimulationGUI(tkScrollableWindow):
         self._create_question_config_widgets()
         self._create_other_config_widgets()
         self._create_log_widget()
+        self._create_simulation_control_panel()
+        self.after_idle(self._update_scrollregion)
+
+    def _create_simulation_control_panel(self):
         self.start_btn = ttk.Button(
             self.scrollable_frame,
             text="▶ Start Simulation",
             command=self.start_simulation,
         )
         self.start_btn.pack(fill=tk.X, pady=10)
-        self.after_idle(self._update_scrollregion)
+        self.terminate_btn = ttk.Button(
+            self.scrollable_frame,
+            text="Terminate Simulation",
+            command=self.terminate_simulation,
+        )
+        self.terminate_btn.pack(fill=tk.X, pady=10)
 
     def _create_question_config_widgets(self):
         question_config_frame = ttk.LabelFrame(self.scrollable_frame, text="Question Configuration", padding=10)
@@ -156,10 +164,20 @@ class SimulationGUI(tkScrollableWindow):
         self.simulation_thread = Thread(target=self._run, daemon=True)
         self.simulation_thread.start()
 
+    # TODO:
+    def terminate_simulation(self):
+        if self.simulation_thread and self.simulation_thread.is_alive():
+            if messagebox.askyesno("Confirm", "Are you sure you want to terminate the simulation?"):
+                self.simulation.terminate_simulation()
+        else:
+            messagebox.showwarning("Warning", "No simulation is running.")
+
     def _run(self):
         try:
             self.simulation = Simulation(**self.get_config())
             self.simulation.start_simulation()
+        except ForceTerminateException:
+            messagebox.showinfo("Info", "Simulation terminated.")
         except Exception as e:
             logger.error(f"Simulation failed: {e}")
             messagebox.showerror("Error", f"Simulation failed: {e}")
