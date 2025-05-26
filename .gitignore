@@ -12,6 +12,7 @@ wheels/
 # Generated file
 *.CSV
 *.log
+ignore_*.*
 
 # joblib
 cachedir/*
