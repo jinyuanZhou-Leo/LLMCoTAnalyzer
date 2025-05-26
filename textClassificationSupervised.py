@@ -115,8 +115,9 @@ if __name__ == "__main__":
         model_name="Alibaba-NLP/gte-multilingual-base",
         train_batch_path="train.csv",
         eval_batch_path="val.csv",
-        batch_size=8,
+        batch_size=32,
     )
+    # intfloat/multilingual-e5-large-instruct
     text = "000000 gives approx 0."
     label, prob = classifier.get_prediction(text)
     print(f"Text: {text}, Label: {label}, Probability: {prob}")
