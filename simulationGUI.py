@@ -77,7 +77,7 @@ class SimulationGUI(tkScrollableWindow):
             btn_frame,
             text="+ Add",
             command=lambda: self.question_table.insert_row(  # 使用lambda延迟执行
-                self.add_question_entry.get(),
+                values=(self.add_question_entry.get(),),
                 validator=lambda x: x != "",
             ),
         ).pack(side=tk.LEFT, padx=2)
