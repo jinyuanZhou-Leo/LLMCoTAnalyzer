@@ -22,15 +22,21 @@ class TextClassifier:
         self.__train()
 
     def __init_model(self) -> None:
-        if not torch.backends.mps.is_available():
-            raise RuntimeError("MPS device not found. Requires macOS 12.3+ and Apple Silicon")
-        else:
+        if torch.backends.mps.is_available():
+            self.device = "mps"
             logger.success("MPS device is detected, training is accelerated using Apple Neural Engine")
+        elif torch.cuda.is_available():
+            self.device = "cuda"
+            logger.success("CUDA device is detected, training is accelerated using NVIDIA GPU")
+        else:
+            self.device = "cpu"
+            logger.warning("No GPU device is detected, try to use cpu instead")
+
         logger.info("Initializing pretrained model and tokenizer...")
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
             self.model = AutoModel.from_pretrained(self.model_name, trust_remote_code=True)
-            self.model = self.model.to("mps")
+            self.model = self.model.to(self.device)
             self.model.eval()
         except Exception as e:
             raise RuntimeError(f"Failed to load model or tokenizer: {e}")
@@ -67,15 +73,26 @@ class TextClassifier:
         logger.success("Finished Training")
 
     def __embed(self, text_list, batch_size):
-        """对一批文本计算句向量（取池化后输出均值）"""
         embeddings = []
-        with torch.no_grad():
+        with (
+            torch.no_grad(),
+            (
+                torch.cuda.amp.autocast("cuda")
+                if self.device == "cuda"
+                else torch.amp.autocast(device_type=self.device, enabled=False)
+            ),
+        ):
             for i in range(0, len(text_list), batch_size):
                 batch = text_list[i : i + batch_size]
-                encoded = self.tokenizer(batch, padding=True, truncation=True, return_tensors="pt")
-                encoded = encoded.to("mps")
+                encoded = self.tokenizer(batch, padding=True, truncation=True, return_tensors="pt").to(self.device)
+
                 out = self.model(**encoded).last_hidden_state  # (B, L, D)
-                pooled = out.mean(dim=1)  # (B, D)
+
+                # 使用attention mask加权平均代替简单平均
+                attention_mask = encoded["attention_mask"]
+                input_mask_expanded = attention_mask.unsqueeze(-1).expand(out.size()).float()
+                pooled = torch.sum(out * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
                 embeddings.append(pooled)
         return torch.cat(embeddings).cpu().numpy()
 
