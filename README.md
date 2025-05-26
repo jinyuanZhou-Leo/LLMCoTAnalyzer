@@ -44,7 +44,7 @@ git clone https://github.com/jinyuanZhou-Leo/LLMCoTAnalyzer.git
 cd LLMCoTAnalyzer
 ```
 
-**3. Dependency and Environment Configuration**
+**3. Dependency and Environment Configuration 依赖与环境配置**
 
 This project use ```uv``` the package manager. You can configure the environment and install the dependencies by running
 
@@ -53,9 +53,14 @@ This project use ```uv``` the package manager. You can configure the environment
 uv sync
 ```
 
-**4. Run the project locally**
+**4. Run the project locally 在本地运行项目**
+
+Congrats! The configuration is all done😛
+
 
 Then, You can run the project by running
+
+
 大功告成， 你可以通过运行以下脚本启动项目
 - ```simulation.py```
 - ```simulationGUI.py```

@@ -131,12 +131,6 @@ class ForceTerminateException(Exception):
 
 
 if __name__ == "__main__":
-    model_list = [
-        ["qwen3-0.6b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"],
-        ["qwen3-1.7b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"],
-        ["qwen3-4b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"],
-        ["qwen3-8b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"],
-    ]
     concepts = [
         "Is it right?",
         "Wait, maybe better to",
@@ -149,18 +143,17 @@ if __name__ == "__main__":
         "Assuming that I made a mistake",
         "Something doesn't add up",
     ]
-    with open("question_list.json", "r", encoding="utf-8") as f:
-        question_list = json.load(f)
-        question_list = [question for question in question_list["questions"]]
-    system_prompt = "You are a helpful assistant."
+    with open("config.json", "r", encoding="utf-8") as f:
+        config: dict = json.load(f)
+
     simulation = Simulation(
-        model_list=model_list,
-        repetition=2,
-        question_list=question_list,
-        system_prompt=system_prompt,
-        embedding_method="SupervisedClassification",
-        ask_when_unsure=True,
+        model_list=[(model["name"], model["api_url"], model["api_key"]) for model in config["model_list"]],
+        repetition=int(config["repetition"]),
+        question_list=[(question,) for question in config["question_list"]],
+        system_prompt=config["system_prompt"],
+        embedding_method=config["method"],
+        ask_when_unsure=config["ask_when_unsure"],
+        filter_concept=config.get("filter_concept", None),
     )
-    # filter_concept=concepts
     # ! if we use supervised classification, we don't need to provide the concepts
     simulation.start_simulation()

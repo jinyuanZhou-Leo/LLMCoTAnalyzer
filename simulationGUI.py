@@ -16,16 +16,24 @@ logger.add(sys.stdout, level="INFO", colorize=True)
 logger.add("simulationGUI.log", level="TRACE", rotation="300KB")
 
 class SimulationGUI(tkScrollableWindow):
+
     def __init__(
         self,
         model_list: list[str] = None,
         question_list: list[str] = None,
+        repetition: int = 2,
+        system_prompt: str = "You are a helpful assistant.",
+        ask_when_unsure: bool = False,
     ):
         super().__init__(themename="darkly")
-        self.title("LLM CoT Simulation")
-        self.geometry("1024x800")
+        self.system_prompt = system_prompt
+        self.ask_when_unsure = ask_when_unsure
+        self.repetition = repetition
         self.model_list = model_list or []
         self.question_list = question_list or []
+
+        self.title("LLM CoT Simulation")
+        self.geometry("1024x800")
         self.simulation_cofig = {}
         self.simulation_thread = None
         self.create_widgets()
@@ -132,15 +140,15 @@ class SimulationGUI(tkScrollableWindow):
 
         ttk.Label(other_config_frame, text="Repetition (Per Question)").pack(anchor=tk.W)
         self.repetition_spin = ttk.Spinbox(other_config_frame, from_=2, to=20)
-        self.repetition_spin.set(2)
+        self.repetition_spin.set(self.repetition)
         self.repetition_spin.pack(anchor=tk.W, pady=5)
 
         ttk.Label(other_config_frame, text="System Prompt:").pack(anchor=tk.W)
         self.system_prompt_entry = ttk.Entry(other_config_frame, width=100)
         self.system_prompt_entry.pack(anchor=tk.W, pady=5)
-        self.system_prompt_entry.insert(0, "You are a helpful assistant.")
+        self.system_prompt_entry.insert(0, self.system_prompt)
 
-        self.ask_when_unsure_var = tk.BooleanVar(value=False)
+        self.ask_when_unsure_var = tk.BooleanVar(value=self.ask_when_unsure)
         ask_when_unsure_checkbutton = ttk.Checkbutton(
             other_config_frame,
             text="Ask me when unsure",
@@ -194,16 +202,14 @@ class SimulationGUI(tkScrollableWindow):
 
 
 if __name__ == "__main__":
-    model_list = [
-        ("qwen3-0.6b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
-        ("qwen3-1.7b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
-        ("qwen3-4b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
-        ("qwen3-8b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
-        ("qwen3-14b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
-        ("qwen3-32b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
-    ]
-    with open("question_list.json", "r", encoding="utf-8") as f:
-        question_list = json.load(f)
-        question_list = [(question,) for question in question_list["questions"]]
-    app = SimulationGUI(model_list=model_list, question_list=question_list)
+    with open("config.json", "r", encoding="utf-8") as f:
+        config: dict = json.load(f)
+
+    app = SimulationGUI(
+        model_list=[(model["name"], model["api_url"], model["api_key"]) for model in config["model_list"]],
+        question_list=[(question,) for question in config["question_list"]],
+        system_prompt=config["system_prompt"],
+        ask_when_unsure=config["ask_when_unsure"],
+        repetition=int(config["repetition"]),
+    )
     app.mainloop()
