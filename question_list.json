@@ -1,0 +1,14 @@
+{
+    "questions": [
+        "What is the integral of x^2?",
+        "A bag contains 5 red balls, 3 blue balls, and 2 green balls. If two balls are drawn at random without replacement, what is the probability that both are red?",
+        "Solve the quadratic equation 2x^2 - 5x - 3 = 0.",
+        "How many moles of CO₂ are produced when 2 moles of C₂H₆ are burned completely in oxygen?",
+        "What is the pH of a solution with a hydrogen ion concentration of 1 \\times 10^{-4} mol/L?",
+        "A 5 kg box is pulled across a horizontal surface with a constant force of 30 N. If the coefficient of kinetic friction is 0.2, what is the acceleration of the box?",
+        "A 2 kg cart moving at 4 m/s collides elastically with a stationary 3 kg cart. What is the velocity of the 2 kg cart after the collision?",
+        "My Bluetooth earphones are broken. Should I see a dentist or an ENT specialist? Give me a definite answer.",
+        "A product first increases in price by 10%, then decreases by 10%. Compared to the original price, is the final price higher, lower, or the same?",
+        "The side length of a square is increased by 2 centimeters, and the area increases by 24 square centimeters. What was the original side length of the square in centimeters?"
+    ]
+}

@@ -6,6 +6,7 @@ from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 from datetime import datetime
 import os
+import json
 import csv
 
 logger.remove()
@@ -148,7 +149,9 @@ if __name__ == "__main__":
         "Assuming that I made a mistake",
         "Something doesn't add up",
     ]
-    question_list = ["What is the integral of x^2?", "What is the derivative of (lnx)^2?"]
+    with open("question_list.json", "r", encoding="utf-8") as f:
+        question_list = json.load(f)
+        question_list = [question for question in question_list["questions"]]
     system_prompt = "You are a helpful assistant."
     simulation = Simulation(
         model_list=model_list,

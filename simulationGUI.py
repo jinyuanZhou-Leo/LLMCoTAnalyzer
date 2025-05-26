@@ -202,6 +202,8 @@ if __name__ == "__main__":
         ("qwen3-14b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
         ("qwen3-32b", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
     ]
-    question_list = [("What is the integral of x^2?",), ("What is the derivative of (lnx)^2?",)]
+    with open("question_list.json", "r", encoding="utf-8") as f:
+        question_list = json.load(f)
+        question_list = [(question,) for question in question_list["questions"]]
     app = SimulationGUI(model_list=model_list, question_list=question_list)
     app.mainloop()
