@@ -57,3 +57,7 @@ class ModernTableView(Tableview):
         if selected_iids:
             # 删除选中的行
             self.delete_rows(iids=selected_iids)
+
+
+if __name__ == "__main__":
+    logger.warning("This is a demo script, this module is not meant to be run directly.")

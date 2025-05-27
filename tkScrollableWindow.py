@@ -66,5 +66,8 @@ class tkScrollableWindow(ttk.Window):
 
 
 if __name__ == "__main__":
+    from loguru import logger
+
+    logger.warning("This is a demo script, this module is not meant to be run directly.")
     root = tkScrollableWindow(themename="darkly")
     root.mainloop()
