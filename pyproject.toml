@@ -10,6 +10,7 @@ dependencies = [
     "numpy",
     "openai>=1.79.0",
     "pandas>=2.2.3",
+    "pywebview",
     "scikit-learn>=1.6.1",
     "sentence-transformers>=4.1.0",
     "torch>=2.7.0",

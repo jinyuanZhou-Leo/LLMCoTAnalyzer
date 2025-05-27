@@ -19,3 +19,7 @@ cachedir/*
 
 # macOS
 .DS_Store
+
+# temp
+*webui*.*
+*webui*/*
