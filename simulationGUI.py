@@ -202,7 +202,7 @@ class SimulationGUI(tkScrollableWindow):
 
 
 if __name__ == "__main__":
-    with open("config.json", "r", encoding="utf-8") as f:
+    with open("simulation_config.json", "r", encoding="utf-8") as f:
         config: dict = json.load(f)
 
     app = SimulationGUI(

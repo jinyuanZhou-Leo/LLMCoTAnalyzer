@@ -1,0 +1,8 @@
+{
+    "significanceLevel": 0.05,
+    "sketchPlot": true,
+    "postProcessMethod": {
+        "intraQuestion": "mean",
+        "interQuestion": "sum"
+    }
+}

@@ -143,7 +143,7 @@ if __name__ == "__main__":
         "Assuming that I made a mistake",
         "Something doesn't add up",
     ]
-    with open("config.json", "r", encoding="utf-8") as f:
+    with open("simulation_config.json", "r", encoding="utf-8") as f:
         config: dict = json.load(f)
 
     simulation = Simulation(
