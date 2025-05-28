@@ -1,9 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import json
 from loguru import logger
 from tqdm import tqdm
 from typing import Callable
+
+with open("analysis_config.json", "r", encoding="utf-8") as f:
+    config: dict = json.load(f)
 
 # read the simulation result
 file_path = "dummydata.csv"
@@ -25,8 +29,21 @@ result: pd.Series = (
 )
 
 # post processing
-result = result.map(sum)
-result = result.apply(np.mean, axis=1)
+if config["postProcessingMethod"]["intraQuestion"].lower() == "sum":
+    result = result.map(sum)
+elif config["postProcessingMethod"]["intraQuestion"].lower() == "mean":
+    result = result.map(np.mean)
+else:
+    logger.critical(f"Invalid intraQuestion post processing method: {config['postProcessingMethod']['intraQuestion']}")
+    raise ValueError(f"Invalid intraQuestion post processing method: {config['postProcessingMethod']['intraQuestion']}")
+
+if config["postProcessingMethod"]["interQuestion"].lower() == "sum":
+    result = result.apply(sum, axis=1)
+elif config["postProcessingMethod"]["interQuestion"].lower() == "mean":
+    result = result.apply(np.mean, axis=1)
+else:
+    logger.critical(f"Invalid interQuestion post processing method: {config['postProcessingMethod']['interQuestion']}")
+    raise ValueError(f"Invalid interQuestion post processing method: {config['postProcessingMethod']['interQuestion']}")
 
 result = result.reset_index()
 result.columns = ["Model", "Value"]
