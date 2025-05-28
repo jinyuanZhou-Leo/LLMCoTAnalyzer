@@ -33,7 +33,7 @@ class SimulationGUI(tkScrollableWindow):
         self.question_list = question_list or []
 
         self.title("LLM CoT Simulation")
-        self.geometry("1024x800")
+        self.geometry("1100x800")
         self.simulation_cofig = {}
         self.simulation_thread = None
         self.create_widgets()
