@@ -25,7 +25,7 @@ class SimulationGUI(tkScrollableWindow):
         system_prompt: str = "You are a helpful assistant.",
         ask_when_unsure: bool = False,
     ):
-        super().__init__(themename="darkly")
+        super().__init__(themename="darkly", iconphoto="./assets/icon.png")
         self.system_prompt = system_prompt
         self.ask_when_unsure = ask_when_unsure
         self.repetition = repetition
