@@ -54,12 +54,12 @@ class SimulationGUI(tkScrollableWindow):
             command=self.start_simulation,
         )
         self.start_btn.pack(fill=tk.X, pady=10)
-        self.terminate_btn = ttk.Button(
-            self.scrollable_frame,
-            text="Terminate Simulation",
-            command=self.terminate_simulation,
-        )
-        self.terminate_btn.pack(fill=tk.X, pady=10)
+        # self.terminate_btn = ttk.Button(
+        #     self.scrollable_frame,
+        #     text="Terminate Simulation",
+        #     command=self.terminate_simulation,
+        # )
+        # self.terminate_btn.pack(fill=tk.X, pady=10)
 
     def _create_question_config_widgets(self):
         question_config_frame = ttk.LabelFrame(self.scrollable_frame, text="Question Configuration", padding=10)
