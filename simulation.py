@@ -69,7 +69,7 @@ class Simulation:
     def start_simulation(self):
         with open(self.output_path, "w", newline="") as csvfile:
             writer = csv.DictWriter(
-                csvfile, fieldnames=["Model", "Question", "Repetition", "Count", "Reasoning", "Timestamp"]
+                csvfile, fieldnames=["Model", "Size", "Question", "Repetition", "Count", "Reasoning", "Timestamp"]
             )
             writer.writeheader()
             with tqdm(
@@ -83,6 +83,7 @@ class Simulation:
                     model_name = model_info[0]
                     api_url = model_info[1]
                     api_key = os.getenv(model_info[2])
+                    model_size = model_info[3]
                     model = LLMManager(
                         model_name=model_name, system_prompt=self.system_prompt, api_url=api_url, api_key=api_key
                     )
@@ -109,6 +110,7 @@ class Simulation:
                                 writer.writerow(
                                     {
                                         "Model": model_name,
+                                        "Size": model_size,
                                         "Question": question,
                                         "Repetition": i + 1,
                                         "Count": outliers_cnt,
@@ -147,7 +149,9 @@ if __name__ == "__main__":
         config: dict = json.load(f)
 
     simulation = Simulation(
-        model_list=[(model["name"], model["api_url"], model["api_key"]) for model in config["model_list"]],
+        model_list=[
+            (model["name"], model["api_url"], model["api_key"], model["size"]) for model in config["model_list"]
+        ],
         repetition=int(config["repetition"]),
         question_list=[(question,) for question in config["question_list"]],
         system_prompt=config["system_prompt"],

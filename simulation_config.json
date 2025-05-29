@@ -3,32 +3,38 @@
         {
             "name": "qwen3-0.6b",
             "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            "api_key": "DASHSCOPE_API_KEY"
+            "api_key": "DASHSCOPE_API_KEY",
+            "size": 0.6
         },
         {
             "name": "qwen3-1.5b",
             "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            "api_key": "DASHSCOPE_API_KEY"
+            "api_key": "DASHSCOPE_API_KEY",
+            "size": 1.5
         },
         {
             "name": "qwen3-4b",
             "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            "api_key": "DASHSCOPE_API_KEY"
+            "api_key": "DASHSCOPE_API_KEY",
+            "size": 4
         },
         {
             "name": "qwen3-8b",
             "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            "api_key": "DASHSCOPE_API_KEY"
+            "api_key": "DASHSCOPE_API_KEY",
+            "size": 8
         },
         {
             "name": "qwen3-14b",
             "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            "api_key": "DASHSCOPE_API_KEY"
+            "api_key": "DASHSCOPE_API_KEY",
+            "size": 14
         },
         {
             "name": "qwen3-32b",
             "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            "api_key": "DASHSCOPE_API_KEY"
+            "api_key": "DASHSCOPE_API_KEY",
+            "size": 32
         }
     ],
     "question_list": [
