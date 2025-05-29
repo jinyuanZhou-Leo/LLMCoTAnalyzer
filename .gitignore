@@ -22,6 +22,9 @@ cachedir/*
 # macOS
 .DS_Store
 
+# project generated
+result_analysis/*
+
 # temp
 *webui*.*
 *webui*/*

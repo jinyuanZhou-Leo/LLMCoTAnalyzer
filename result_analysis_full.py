@@ -2,9 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import json
+import os
 from loguru import logger
 from tqdm import tqdm
 import statsmodels.api as sm
+from datetime import datetime
 
 
 with open("analysis_config.json", "r", encoding="utf-8") as f:
@@ -39,6 +41,9 @@ df["Count"] = df["Count"].astype(int)
 # 处理缺失值
 df = df.dropna(subset=["Size", "Count"])
 
+timestamp = datetime.now().strftime("%m-%d-%H:%M:%S")  # ! No Windows Compatibility
+path = f"result_analysis/{timestamp}"
+os.makedirs(path, exist_ok=True)
 
 # Boxplot of Self-doubt counts by Size
 plt.figure()
@@ -47,6 +52,7 @@ plt.xlabel("Model Size (Billion Params)")
 plt.ylabel("Self-Doubt Count")
 plt.title("Boxplot of Self-Doubt Counts by Model Size")
 plt.suptitle("")  # remove default title
+plt.savefig(f"{path}/boxplot.png")
 plt.show()
 
 # Scatter + regression line
@@ -62,7 +68,10 @@ plt.plot(line_x, line_y)
 plt.xlabel("Model Size (Billion Params)")
 plt.ylabel("Self-Doubt Count")
 plt.title("Scatter Plot with Linear Regression Fit")
+plt.savefig(f"{path}/linearRegression.png")
 plt.show()
 
 # Print regression summary
 print(model.summary())
+with open(f"{path}/linearRegressionDetails.log", "w") as f:
+    f.write(model.summary().as_text())
