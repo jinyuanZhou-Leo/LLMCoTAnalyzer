@@ -153,7 +153,7 @@ if __name__ == "__main__":
             (model["name"], model["api_url"], model["api_key"], model["size"]) for model in config["model_list"]
         ],
         repetition=int(config["repetition"]),
-        question_list=[(question,) for question in config["question_list"]],
+        question_list=[question for question in config["question_list"]],
         system_prompt=config["system_prompt"],
         embedding_method=config["method"],
         ask_when_unsure=config["ask_when_unsure"],

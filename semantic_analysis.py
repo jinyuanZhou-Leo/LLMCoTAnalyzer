@@ -114,15 +114,16 @@ class SemanticChunks:
             logger.debug(f"Label: {label}, Prob: {prob}")
             if label == 1:
                 cnt += 1
-            if self.ask_when_unsure and 0.4 <= prob <= 0.7:
+            if self.ask_when_unsure and 0.5 <= prob <= 0.7:
                 logger.warning(f"Chunk: {chunk}")
                 logger.warning(f"Predicted Prob: {prob}, Please check it manually (1|0)")
-                user_answer = input("Answer (0 False | 1 True | 2 Skip): ")
+                user_answer = int(input("Answer (0 False | 1 True | 2 Skip): "))
                 if user_answer == 2:
                     continue
                 else:
                     with open(self.model.train_batch_path, "a", newline="", encoding="utf-8") as f:
                         writer = csv.writer(f)
+                        chunk: str = chunk.strip('"')
                         writer.writerow([f'"{chunk}"', int(user_answer)])
                     if user_answer == 1:
                         cnt += 1
