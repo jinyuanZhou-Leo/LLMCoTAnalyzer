@@ -61,7 +61,7 @@ with open("analysis_config.json", "r", encoding="utf-8") as f:
     config: dict = json.load(f)
 
 # read the simulation result
-file_path = "dummydata.csv"
+file_path = "simulation_results-05-29-19:19:44.csv"
 try:
     df = pd.read_csv(file_path)
 except Exception as e:

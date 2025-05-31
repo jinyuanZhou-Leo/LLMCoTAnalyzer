@@ -3,6 +3,6 @@
     "sketchPlot": true,
     "postProcessMethod": {
         "intraQuestion": "mean",
-        "interQuestion": "sum"
+        "interQuestion": "mean"
     }
 }

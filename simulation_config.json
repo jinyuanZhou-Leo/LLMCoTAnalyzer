@@ -7,10 +7,10 @@
             "size": 0.6
         },
         {
-            "name": "qwen3-1.5b",
+            "name": "qwen3-1.7b",
             "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
             "api_key": "DASHSCOPE_API_KEY",
-            "size": 1.5
+            "size": 1.7
         },
         {
             "name": "qwen3-4b",

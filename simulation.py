@@ -11,7 +11,7 @@ import csv
 
 logger.remove()
 logger.add(lambda msg: tqdm.write(msg, end=""), level="DEBUG", colorize=True)
-logger.add("simulation.log", level="TRACE", rotation="300KB")
+logger.add("simulation.log", level="TRACE", rotation="3MB")
 class Simulation:
 
     def __init__(
@@ -22,9 +22,10 @@ class Simulation:
         system_prompt: str,
         filter_concept: list = None,
         embedding_method: str = "SupervisedClassification",
-        output_path: str = f"simulation_results-{datetime.now().strftime("%m-%d-%H:%M:%S")}.csv",
+        output_path: str = f"simulation_results-{datetime.now().strftime("%m-%d-%H-%M-%S")}.csv",
         ask_when_unsure: bool = False,
     ):
+        # TODO: make model_list a dict instead of list
         self.model_list = model_list
         self.repetition = repetition
         self.question_list = question_list
@@ -83,7 +84,7 @@ class Simulation:
                     model_name = model_info[0]
                     api_url = model_info[1]
                     api_key = os.getenv(model_info[2])
-                    model_size = model_info[3]
+                    model_size = model_info[3] or []
                     model = LLMManager(
                         model_name=model_name, system_prompt=self.system_prompt, api_url=api_url, api_key=api_key
                     )

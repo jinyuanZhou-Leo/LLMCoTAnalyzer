@@ -97,7 +97,7 @@ class SimulationGUI(tkScrollableWindow):
         model_config_frame = ttk.LabelFrame(self.scrollable_frame, text="Model Configuration", padding=10)
         model_config_frame.pack(fill=tk.X, pady=10)
 
-        cols = ("Model", "API URL", "API Key")
+        cols = ("Model", "API URL", "API Key", "Size (Billion Params)")
         self.model_table = ModernTableView(
             master=model_config_frame,
             bootstyle=PRIMARY,
@@ -112,9 +112,11 @@ class SimulationGUI(tkScrollableWindow):
         self.add_model_entry_model_name = ttk.Entry(add_model_entries_frame, width=25)
         self.add_model_entry_api_url = ttk.Entry(add_model_entries_frame, width=25)
         self.add_model_entry_api_key = ttk.Entry(add_model_entries_frame, width=25)
-        self.add_model_entry_model_name.pack(side=tk.LEFT, padx=5)
-        self.add_model_entry_api_url.pack(side=tk.LEFT, padx=5)
-        self.add_model_entry_api_key.pack(side=tk.LEFT, padx=5)
+        self.add_model_entry_model_size = ttk.Entry(add_model_entries_frame, width=25)
+        self.add_model_entry_model_name.pack(side=tk.LEFT, padx=5, expand=True)
+        self.add_model_entry_api_url.pack(side=tk.LEFT, padx=5, expand=True)
+        self.add_model_entry_api_key.pack(side=tk.LEFT, padx=5, expand=True)
+        self.add_model_entry_model_size.pack(side=tk.LEFT, padx=5, expand=True)
 
         btn_frame = ttk.Frame(model_config_frame)
         btn_frame.pack(fill=tk.X, pady=5)
@@ -126,6 +128,7 @@ class SimulationGUI(tkScrollableWindow):
                     self.add_model_entry_model_name.get(),
                     self.add_model_entry_api_url.get(),
                     self.add_model_entry_api_key.get(),
+                    self.add_model_entry_model_size.get(),
                 ),
                 validator=lambda x: all(x),
             ),
@@ -206,7 +209,9 @@ if __name__ == "__main__":
         config: dict = json.load(f)
 
     app = SimulationGUI(
-        model_list=[(model["name"], model["api_url"], model["api_key"]) for model in config["model_list"]],
+        model_list=[
+            (model["name"], model["api_url"], model["api_key"], model["size"]) for model in config["model_list"]
+        ],
         question_list=[(question,) for question in config["question_list"]],
         system_prompt=config["system_prompt"],
         ask_when_unsure=config["ask_when_unsure"],
