@@ -19,7 +19,7 @@ class SimulationGUI(tkScrollableWindow):
 
     def __init__(
         self,
-        model_list: list[str] = None,
+        model_list: list[dict] = None,
         question_list: list[str] = None,
         repetition: int = 2,
         system_prompt: str = "You are a helpful assistant.",
@@ -30,6 +30,15 @@ class SimulationGUI(tkScrollableWindow):
         self.ask_when_unsure = ask_when_unsure
         self.repetition = repetition
         self.model_list = model_list or []
+        self.model_list = [
+            (
+                model["name"],
+                model["size"],
+                model["api_url"],
+                model["api_key"],
+            )
+            for model in self.model_list
+        ]
         self.question_list = question_list or []
 
         self.title("LLM CoT Simulation")
@@ -97,7 +106,12 @@ class SimulationGUI(tkScrollableWindow):
         model_config_frame = ttk.LabelFrame(self.scrollable_frame, text="Model Configuration", padding=10)
         model_config_frame.pack(fill=tk.X, pady=10)
 
-        cols = ("Model", "API URL", "API Key", "Size (Billion Params)")
+        cols = (
+            "Model",
+            "Size (Billion Params)",
+            "API URL",
+            "API Key",
+        )
         self.model_table = ModernTableView(
             master=model_config_frame,
             bootstyle=PRIMARY,
@@ -110,13 +124,13 @@ class SimulationGUI(tkScrollableWindow):
         add_model_entries_frame = ttk.Frame(model_config_frame)
         add_model_entries_frame.pack(fill=tk.X, pady=5)
         self.add_model_entry_model_name = ttk.Entry(add_model_entries_frame, width=25)
+        self.add_model_entry_model_size = ttk.Entry(add_model_entries_frame, width=25)
         self.add_model_entry_api_url = ttk.Entry(add_model_entries_frame, width=25)
         self.add_model_entry_api_key = ttk.Entry(add_model_entries_frame, width=25)
-        self.add_model_entry_model_size = ttk.Entry(add_model_entries_frame, width=25)
         self.add_model_entry_model_name.pack(side=tk.LEFT, padx=5, expand=True)
+        self.add_model_entry_model_size.pack(side=tk.LEFT, padx=5, expand=True)
         self.add_model_entry_api_url.pack(side=tk.LEFT, padx=5, expand=True)
         self.add_model_entry_api_key.pack(side=tk.LEFT, padx=5, expand=True)
-        self.add_model_entry_model_size.pack(side=tk.LEFT, padx=5, expand=True)
 
         btn_frame = ttk.Frame(model_config_frame)
         btn_frame.pack(fill=tk.X, pady=5)
@@ -126,9 +140,9 @@ class SimulationGUI(tkScrollableWindow):
             command=lambda: self.model_table.insert_row(
                 values=(
                     self.add_model_entry_model_name.get(),
+                    self.add_model_entry_model_size.get(),
                     self.add_model_entry_api_url.get(),
                     self.add_model_entry_api_key.get(),
-                    self.add_model_entry_model_size.get(),
                 ),
                 validator=lambda x: all(x),
             ),
@@ -159,9 +173,20 @@ class SimulationGUI(tkScrollableWindow):
         )
         ask_when_unsure_checkbutton.pack(anchor=tk.W, pady=10)
 
-    def get_config(self):
+    def __get_simulation_config(self):
+        model_list: list[dict] = []
+        for row in self.model_table.get_rows():
+            model_list.append(
+                {
+                    "name": row.values[0],
+                    "api_url": row.values[2],
+                    "api_key": row.values[3],
+                    "size": row.values[1],
+                }
+            )
+
         return {
-            "model_list": [row.values for row in self.model_table.get_rows()],  # 直接遍历rows属性
+            "model_list": model_list,  # 直接遍历rows属性
             "repetition": int(self.repetition_spin.get()),
             "question_list": [row.values[0] for row in self.question_table.get_rows()],
             "system_prompt": self.system_prompt_entry.get(),
@@ -185,7 +210,7 @@ class SimulationGUI(tkScrollableWindow):
 
     def _run(self):
         try:
-            self.simulation = Simulation(**self.get_config())
+            self.simulation = Simulation(**self.__get_simulation_config())
             self.simulation.start_simulation()
         except ForceTerminateException:
             messagebox.showinfo("Info", "Simulation terminated.")
@@ -209,9 +234,7 @@ if __name__ == "__main__":
         config: dict = json.load(f)
 
     app = SimulationGUI(
-        model_list=[
-            (model["name"], model["api_url"], model["api_key"], model["size"]) for model in config["model_list"]
-        ],
+        model_list=config["model_list"],
         question_list=[(question,) for question in config["question_list"]],
         system_prompt=config["system_prompt"],
         ask_when_unsure=config["ask_when_unsure"],

@@ -16,7 +16,7 @@ class Simulation:
 
     def __init__(
         self,
-        model_list: list[str],
+        model_list: list[dict],
         repetition: int,
         question_list: list[str],
         system_prompt: str,
@@ -80,11 +80,11 @@ class Simulation:
                 total=len(self.model_list) * len(self.question_list) * self.repetition,
                 bar_format="{l_bar}{bar} | {percentage:3.1f}% {r_bar}",
             ) as overallpbar:
-                for model_info in self.model_list:
-                    model_name = model_info[0]
-                    api_url = model_info[1]
-                    api_key = os.getenv(model_info[2])
-                    model_size = model_info[3] or []
+                for model in self.model_list:
+                    model_name = model["name"]
+                    api_url = model["api_url"]
+                    api_key = os.getenv(model["api_key"])
+                    model_size = model["size"]
                     model = LLMManager(
                         model_name=model_name, system_prompt=self.system_prompt, api_url=api_url, api_key=api_key
                     )
@@ -150,9 +150,7 @@ if __name__ == "__main__":
         config: dict = json.load(f)
 
     simulation = Simulation(
-        model_list=[
-            (model["name"], model["api_url"], model["api_key"], model["size"]) for model in config["model_list"]
-        ],
+        model_list=config["model_list"],
         repetition=int(config["repetition"]),
         question_list=[question for question in config["question_list"]],
         system_prompt=config["system_prompt"],
