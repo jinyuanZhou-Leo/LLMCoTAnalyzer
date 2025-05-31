@@ -65,3 +65,49 @@ Then, You can run the project by running
 - ```simulation.py```
 - ```simulationGUI.py```
 
+## Configuration 配置
+You can configure the simulation and result analysis by editing ```simulation_config.json``` and ```analysis_config.json```.
+
+可以通过编辑 ```simulation_config.json``` 和 ```analysis_config.json``` 来配置模拟和结果分析。
+
+### 基础配置
+1. `model_list` (模型列表)
+   - 类型: 对象数组
+   - 描述: 要测试的模型配置列表
+   - 参数：
+     - `name`: 模型名称 (e.g. "qwen3-14b")
+     - `api_url`: 模型API地址
+     - `api_key`: API访问密钥的名称（**环境变量的名称，并非密钥本身！**）
+     - `size`: 模型参数量（单位：十亿）
+
+2. `question_list` (问题列表)
+   - 类型: 字符串数组
+   - 描述: 用于测试的预设问题集
+   - 示例: ["What is the integral of x^2?", ...]
+
+### 测试参数
+3. `ask_when_unsure` (不确定时询问)
+   - 类型: 布尔值
+   - 默认: false
+   - 描述: 当模型返回不确定时是否继续追问（**仅适用于CLI**）
+
+4. `repetition` (重复次数)
+   - 类型: 整数 
+   - 默认: 5
+   - 描述: 每个问题的重复测试次数
+
+5. `system_prompt` (系统提示)
+   - 类型: 字符串
+   - 描述: 模型系统提示词
+
+### 高级配置
+6. `method` (测试方法)
+   - 类型: 字符串
+   - 当前值: "SupervisedClassification"
+   - 描述: 使用的测试方法
+
+7. `advanced_config` (高级参数)
+   - 类型: 对象
+   - 参数：
+     - `temperature`: 生成温度 (0-1)
+     - `top_p`: 核心采样概率 (0-1)
