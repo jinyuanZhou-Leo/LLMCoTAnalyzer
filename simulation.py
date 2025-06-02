@@ -7,6 +7,7 @@ from tqdm import tqdm
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from typing import Literal
 import os
 import json
 import csv
@@ -17,6 +18,7 @@ logger.add("simulation.log", level="INFO", rotation="3MB")
 
 
 class Simulation:
+
     def __init__(
         self,
         model_list: list[dict],
@@ -24,7 +26,7 @@ class Simulation:
         question_list: list[str],
         system_prompt: str,
         filter_concept: list = None,
-        embedding_method: str = "SupervisedClassification",
+        embedding_method: Literal["TextEmbedding", "SBERT", "SupervisedClassification"] = "SupervisedClassification",
         output_path: str = f"simulation_results-{datetime.now().strftime("%m-%d-%H-%M-%S")}.csv",
         ask_when_unsure: bool = False,
         max_threads: int = 10,
@@ -179,9 +181,10 @@ if __name__ == "__main__":
         repetition=int(config["repetition"]),
         question_list=[question for question in config["question_list"]],
         system_prompt=config["system_prompt"],
-        embedding_method=config["method"],
-        ask_when_unsure=config["ask_when_unsure"],
+        embedding_method=config.get("method", "SupervisedClassification"),
+        ask_when_unsure=config.get("ask_when_unsure", False),
         filter_concept=config.get("filter_concept", None),
+        max_threads=config.get("max_threads", 10),
     )
     # ! if we use supervised classification, we don't need to provide the concepts
     simulation.start_simulation()

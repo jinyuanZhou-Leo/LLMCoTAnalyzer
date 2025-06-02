@@ -53,8 +53,7 @@
     "repetition": 5,
     "system_prompt": "You are a helpful assistant.",
     "method": "SupervisedClassification",
+    "max_thread": 10,
     "advanced_config": {
-        "temperature": 0.7,
-        "top_p": 0.9
     }
 }
