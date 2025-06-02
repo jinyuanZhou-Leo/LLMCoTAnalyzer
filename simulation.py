@@ -4,6 +4,8 @@ from loguru import logger
 from textClassificationSupervised import TextClassifier
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 import os
 import json
@@ -11,9 +13,10 @@ import csv
 
 logger.remove()
 logger.add(lambda msg: tqdm.write(msg, end=""), level="DEBUG", colorize=True)
-logger.add("simulation.log", level="TRACE", rotation="3MB")
-class Simulation:
+logger.add("simulation.log", level="INFO", rotation="3MB")
 
+
+class Simulation:
     def __init__(
         self,
         model_list: list[dict],
@@ -24,8 +27,8 @@ class Simulation:
         embedding_method: str = "SupervisedClassification",
         output_path: str = f"simulation_results-{datetime.now().strftime("%m-%d-%H-%M-%S")}.csv",
         ask_when_unsure: bool = False,
+        max_threads: int = 10,
     ):
-        # TODO: make model_list a dict instead of list
         self.model_list = model_list
         self.repetition = repetition
         self.question_list = question_list
@@ -34,6 +37,7 @@ class Simulation:
         self.embedding_method = embedding_method
         self.output_path = output_path
         self.ask_when_unsure = ask_when_unsure
+
         if self.embedding_method == "TextEmbedding":
             self.model = self.__init_text_embedding_model()
         elif self.embedding_method == "SBERT":
@@ -42,6 +46,9 @@ class Simulation:
             self.model = self.__init_supervised_model()
         else:
             raise ValueError(f"Invalid method: {embedding_method}.")
+
+        self.max_threads = max_threads
+        self.write_lock = threading.Lock()
 
     def __init_text_embedding_model(self) -> TextEmbeddingManager | None:
         try:
@@ -52,20 +59,55 @@ class Simulation:
                 dimensions=1024,
             )
         except Exception as e:
-            logger.error(f"Failed to initialize text_embedding_model: {e}")
+            logger.critical(f"Failed to initialize text_embedding_model: {e}")
             return None
 
     def __init_SBERT_model(self) -> SentenceTransformer:
-        return SentenceTransformer("all-MiniLM-L6-v2")
-        # return SentenceTransformer("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
+        try:
+            return SentenceTransformer("all-MiniLM-L6-v2")
+            # return SentenceTransformer("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
+        except Exception as e:
+            logger.critical(f"Failed to initialize SBERT model: {e}")
 
     def __init_supervised_model(self) -> TextClassifier:
-        return TextClassifier(
-            model_name="Alibaba-NLP/gte-multilingual-base",
-            train_batch_path="train.csv",
-            eval_batch_path="val.csv",
-            batch_size=32,
-        )
+        try:
+            return TextClassifier(
+                model_name="Alibaba-NLP/gte-multilingual-base",
+                train_batch_path="train.csv",
+                eval_batch_path="val.csv",
+                batch_size=32,
+            )
+        except Exception as e:
+            logger.critical(f"Failed to initialize supervised model: {e}")
+
+    def process_simulation_task(self, model_config: dict, question_id, repetition):
+        logger.info(f"Task | Model:{model_config["name"]}, Question: {question_id+1}, Repetition: {repetition+1}")
+        try:
+            model = LLMManager(
+                model_name=model_config["name"],
+                system_prompt=self.system_prompt,
+                api_url=model_config["api_url"],
+                api_key=os.getenv(model_config["api_key"]),
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize {model["name"]}: {e}")
+            return None
+
+        model.set_thinking(True)
+        model.initialize_context()
+
+        chat_completion = model.get_chat_completion(self.question_list[question_id], verbose=True)
+        reasoning = SemanticChunks(chat_completion["reasoning"], self.model, self.ask_when_unsure)
+
+        return {
+            "Model": model_config["name"],
+            "Size": model_config["size"],
+            "Question": self.question_list[question_id],
+            "Repetition": repetition,
+            "Count": reasoning.count_concept(self.concept),
+            "Reasoning": chat_completion["reasoning"],
+            "Timestamp": datetime.now().isoformat(),
+        }
 
     def start_simulation(self):
         with open(self.output_path, "w", newline="") as csvfile:
@@ -73,56 +115,39 @@ class Simulation:
                 csvfile, fieldnames=["Model", "Size", "Question", "Repetition", "Count", "Reasoning", "Timestamp"]
             )
             writer.writeheader()
+
             with tqdm(
                 desc="Simulation Progress",
                 leave=False,
                 position=0,
                 total=len(self.model_list) * len(self.question_list) * self.repetition,
                 bar_format="{l_bar}{bar} | {percentage:3.1f}% {r_bar}",
-            ) as overallpbar:
-                for model in self.model_list:
-                    model_name = model["name"]
-                    api_url = model["api_url"]
-                    api_key = os.getenv(model["api_key"])
-                    model_size = model["size"]
-                    model = LLMManager(
-                        model_name=model_name, system_prompt=self.system_prompt, api_url=api_url, api_key=api_key
-                    )
-                    model.set_thinking(enable_thinking=True)
-                    logger.success(f'Starting simulation for "{model_name}"')
-                    with tqdm(
-                        total=len(self.question_list) * self.repetition,
-                        desc=f"Processing {model_name}",
-                        position=1,
-                        leave=True,
-                    ) as modelpbar:
-                        for question_index, question in enumerate(self.question_list):
-                            for i in range(self.repetition):
-                                model.initialize_context()  # clear all the context
-                                logger.info(
-                                    f"Task | Model:{model_name}, Question: {question_index+1}, Repetition: {i + 1}"
-                                )
-                                chat_completion = model.get_chat_completion(question, verbose=True)
-                                reasoning = SemanticChunks(
-                                    chat_completion["reasoning"], model=self.model, ask_when_unsure=self.ask_when_unsure
-                                )
-                                outliers_cnt = reasoning.count_concept(self.concept)
-                                logger.success(f"Finished | Outliers_Cnt: {outliers_cnt}")
-                                writer.writerow(
-                                    {
-                                        "Model": model_name,
-                                        "Size": model_size,
-                                        "Question": question,
-                                        "Repetition": i + 1,
-                                        "Count": outliers_cnt,
-                                        "Reasoning": chat_completion["reasoning"],
-                                        "Timestamp": datetime.now().isoformat(),
-                                    }
-                                )
-                                csvfile.flush()  # 确保实时写入
-                                modelpbar.update(1)
-                                overallpbar.update(1)
-                    logger.success(f'Finishing simulation for "{model_name}"')
+            ) as simulation_pbar:
+                for model_config in self.model_list:
+                    with (
+                        tqdm(
+                            desc="Model Progress",
+                            leave=True,
+                            position=0,
+                            total=self.repetition * len(self.question_list),
+                            bar_format="{l_bar}{bar} | {percentage:3.1f}% {r_bar}",
+                        ) as model_pbar,
+                        ThreadPoolExecutor(max_workers=self.max_threads) as executor,
+                    ):
+                        futures = []
+                        for i in range(len(self.question_list)):
+                            for j in range(self.repetition):
+                                futures.append(executor.submit(self.process_simulation_task, model_config, i, j))
+                        for future in as_completed(futures):
+                            try:
+                                result = future.result()
+                                with self.write_lock:  # 线程安全写入
+                                    writer.writerow(result)
+                                    csvfile.flush()
+                                model_pbar.update(1)
+                                simulation_pbar.update(1)
+                            except Exception as e:
+                                logger.error(f"Simulation task {future} failed: {e}")
         logger.success(f"\n\n\nSimulation completed. Results saved to {self.output_path}.")
 
     def terminate_simulation(self):
