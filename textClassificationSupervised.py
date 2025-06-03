@@ -6,6 +6,7 @@ from sklearn.metrics import classification_report
 from transformers import AutoTokenizer, AutoModel
 import torch
 import numpy as np
+import os
 
 logger.remove()
 logger.add(lambda msg: tqdm.write(msg, end=""), level="DEBUG", colorize=True)
@@ -22,6 +23,8 @@ class TextClassifier:
         self.__train()
 
     def __init_model(self) -> None:
+        os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
         if torch.backends.mps.is_available():
             self.device = "mps"
             logger.success("MPS device is detected, training is accelerated using Apple Neural Engine")
