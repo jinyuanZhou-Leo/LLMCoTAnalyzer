@@ -72,10 +72,10 @@ You can configure the simulation and result analysis by editing ```simulation_co
 
 ### 基础配置
 1. `model_list` (模型列表)
-   - 类型: 对象数组
-   - 描述: 要测试的模型配置列表
+   - 类型: 对象数组 List[dict]
+   - 描述: 要测试的模型配置列表 List of model configurations to be tested
    - 参数：
-     - `name`: 模型名称 (e.g. "qwen3-14b")
+     - `name`: 模型名称 Model name (e.g. "qwen3-14b")
      - `api_url`: 模型API地址
      - `api_key`: API访问密钥的名称（**环境变量的名称，并非密钥本身！**）
      - `size`: 模型参数量（单位：十亿）
@@ -87,18 +87,23 @@ You can configure the simulation and result analysis by editing ```simulation_co
 
 ### 测试参数
 3. `ask_when_unsure` (不确定时询问)
-   - 类型: 布尔值
+   - 类型: 布尔值 bool
    - 默认: false
    - 描述: 当模型返回不确定时是否继续追问（**仅适用于CLI**）
 
 4. `repetition` (重复次数)
-   - 类型: 整数 
+   - 类型: 整数 int
    - 默认: 5
    - 描述: 每个问题的重复测试次数
 
 5. `system_prompt` (系统提示)
-   - 类型: 字符串
+   - 类型: 字符串 str
    - 描述: 模型系统提示词
+
+6. `max_thread`
+   - 类型: 整数 int
+   - 默认: 5
+   - 描述: 最大线程数量 Max number of threads
 
 ### 高级配置
 6. `method` (测试方法)
@@ -107,7 +112,4 @@ You can configure the simulation and result analysis by editing ```simulation_co
    - 描述: 使用的测试方法
 
 7. `advanced_config` (高级参数)
-   - 类型: 对象
-   - 参数：
-     - `temperature`: 生成温度 (0-1)
-     - `top_p`: 核心采样概率 (0-1)
+   - 暂无
