@@ -35,6 +35,12 @@
             "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
             "api_key": "DASHSCOPE_API_KEY",
             "size": 32
+        },
+        {
+            "name": "qwen3-235b-a22b",
+            "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "api_key": "DASHSCOPE_API_KEY",
+            "size": 235
         }
     ],
     "question_list": [
@@ -50,7 +56,7 @@
         "The side length of a square is increased by 2 centimeters, and the area increases by 24 square centimeters. What was the original side length of the square in centimeters?"
     ],
     "ask_when_unsure": false,
-    "repetition": 5,
+    "repetition": 3,
     "system_prompt": "You are a helpful assistant.",
     "method": "SupervisedClassification",
     "max_thread": 10,

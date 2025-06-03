@@ -25,7 +25,7 @@ class Simulation:
         repetition: int,
         question_list: list[str],
         system_prompt: str,
-        filter_concept: list = None,
+        filter_concept: list[str] = None,
         embedding_method: Literal["TextEmbedding", "SBERT", "SupervisedClassification"] = "SupervisedClassification",
         output_path: str = f"simulation_results-{datetime.now().strftime("%m-%d-%H-%M-%S")}.csv",
         ask_when_unsure: bool = False,
@@ -111,6 +111,17 @@ class Simulation:
             "Timestamp": datetime.now().isoformat(),
         }
 
+    def _write_result(self, future, writer, csvfile, pbar):
+        try:
+            result = future.result()
+            with self.write_lock:
+                writer.writerow(result)
+                if pbar.n % 10 == 0:
+                    csvfile.flush()
+            pbar.update(1)
+        except Exception as e:
+            logger.error(f"Simulation task {future} failed: {e}")
+
     def start_simulation(self):
         with open(self.output_path, "w", newline="") as csvfile:
             writer = csv.DictWriter(
@@ -118,38 +129,37 @@ class Simulation:
             )
             writer.writeheader()
 
-            with tqdm(
-                desc="Simulation Progress",
-                leave=False,
-                position=0,
-                total=len(self.model_list) * len(self.question_list) * self.repetition,
-                bar_format="{l_bar}{bar} | {percentage:3.1f}% {r_bar}",
-            ) as simulation_pbar:
-                for model_config in self.model_list:
-                    with (
-                        tqdm(
-                            desc="Model Progress",
-                            leave=True,
-                            position=0,
-                            total=self.repetition * len(self.question_list),
-                            bar_format="{l_bar}{bar} | {percentage:3.1f}% {r_bar}",
-                        ) as model_pbar,
-                        ThreadPoolExecutor(max_workers=self.max_threads) as executor,
-                    ):
-                        futures = []
-                        for i in range(len(self.question_list)):
-                            for j in range(self.repetition):
-                                futures.append(executor.submit(self.process_simulation_task, model_config, i, j))
+            task_configs = [
+                (model_config, i, j)
+                for model_config in self.model_list
+                for i in range(len(self.question_list))
+                for j in range(self.repetition)
+            ]
+
+            with (
+                ThreadPoolExecutor(max_workers=self.max_threads) as executor,
+                tqdm(
+                    desc="Simulation Progress",
+                    leave=False,
+                    position=0,
+                    total=len(self.model_list) * len(self.question_list) * self.repetition,
+                    bar_format="{l_bar}{bar} | {percentage:3.1f}% {r_bar}",
+                ) as simulation_pbar,
+            ):
+                BATCH_SIZE = 50
+                futures = []
+                for config in task_configs:
+                    # when there are more than BATCH_SIZE tasks in the queue
+                    # we start to process the result of each task
+                    if len(futures) >= BATCH_SIZE:
                         for future in as_completed(futures):
-                            try:
-                                result = future.result()
-                                with self.write_lock:  # 线程安全写入
-                                    writer.writerow(result)
-                                    csvfile.flush()
-                                model_pbar.update(1)
-                                simulation_pbar.update(1)
-                            except Exception as e:
-                                logger.error(f"Simulation task {future} failed: {e}")
+                            self._write_result(future, writer, csvfile, simulation_pbar)
+                        futures = []
+                    futures.append(executor.submit(self.process_simulation_task, *config))
+
+                # process the remaining tasks, there might not be BATCH_SIZE tasks in the queue
+                for future in as_completed(futures):
+                    self._write_result(future, writer, csvfile, simulation_pbar)
         logger.success(f"\n\n\nSimulation completed. Results saved to {self.output_path}.")
 
     def terminate_simulation(self):
