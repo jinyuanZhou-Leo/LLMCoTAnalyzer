@@ -39,7 +39,7 @@ gh repo clone jinyuanZhou-Leo/LLMCoTAnalyzer
 git clone https://github.com/jinyuanZhou-Leo/LLMCoTAnalyzer.git
 ```
 
-**2. Enter the project dictionary 进入项目目录**
+**2. Enter the project directory 进入项目目录**
 ```bash
 cd LLMCoTAnalyzer
 ```
