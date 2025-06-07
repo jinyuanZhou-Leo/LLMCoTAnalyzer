@@ -44,10 +44,9 @@ class tkScrollableWindow(ttk.Window):
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
-        self.canvas.bind("<Configure>", self._on_canvas_configure)
-        self.scrollable_frame.bind("<Configure>", self._update_scrollregion)
         self.canvas.pack(side="left", fill="both", expand=True, ipadx=10, ipady=10, padx=10, pady=10)
         self.scrollbar.pack(side="right", fill="y")
+
         style = ttk.Style()
         style.configure(".", font="Helvetica")
         self.protocol("WM_DELETE_WINDOW", self.on_close)  # 新增：绑定窗口关闭事件
@@ -56,10 +55,6 @@ class tkScrollableWindow(ttk.Window):
         if self.canvas.winfo_height() < self.canvas.bbox("all")[3]:
             direction = -1 if event.delta > 0 else 1
             self.canvas.yview_scroll(direction, "units")
-
-    def _on_canvas_configure(self, event):
-        # 动态调整框架宽度以匹配画布
-        self.canvas.itemconfig("self.scrollable_frame", width=event.width)
 
     def _update_scrollregion(self):
         self.scrollable_frame.update_idletasks()
