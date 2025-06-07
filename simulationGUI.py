@@ -160,6 +160,11 @@ class SimulationGUI(tkScrollableWindow):
         self.repetition_spin.set(self.repetition)
         self.repetition_spin.pack(anchor=tk.W, pady=5)
 
+        ttk.Label(other_config_frame, text="Maximum Threads").pack(anchor=tk.W)
+        self.max_simulation_threads_spin = ttk.Spinbox(other_config_frame, from_=2, to=30)
+        self.max_simulation_threads_spin.set(10)
+        self.max_simulation_threads_spin.pack(anchor=tk.W, pady=5)
+
         ttk.Label(other_config_frame, text="System Prompt:").pack(anchor=tk.W)
         self.system_prompt_entry = ttk.Entry(other_config_frame, width=100)
         self.system_prompt_entry.pack(anchor=tk.W, pady=5)
@@ -192,6 +197,7 @@ class SimulationGUI(tkScrollableWindow):
             "system_prompt": self.system_prompt_entry.get(),
             "embedding_method": "SupervisedClassification",
             "ask_when_unsure": self.ask_when_unsure_var.get(),
+            "max_threads": int(self.max_simulation_threads_spin.get()),
         }
 
     def start_simulation(self):
