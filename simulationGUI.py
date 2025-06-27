@@ -14,7 +14,6 @@ from tkTableView import ModernTableView
 logger.remove()
 logger.add(sys.stdout, level="INFO", colorize=True)
 logger.add("simulationGUI.log", level="TRACE", rotation="300KB")
-
 class SimulationGUI(tkScrollableWindow):
 
     def __init__(

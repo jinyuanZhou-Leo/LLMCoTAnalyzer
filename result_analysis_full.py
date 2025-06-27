@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import json
@@ -69,6 +68,9 @@ df["Count"] = df["Count"].astype(int)
 # 处理缺失值
 df = df.dropna(subset=["Size", "Count"])
 
+df = df[df["Size"] <= 200]
+# df["Size"] = round(np.log1p(df["Size"]), 2)
+
 timestamp = get_timestamp(data_path.stem)
 result_path = f"result_analysis/{timestamp}"
 os.makedirs(result_path, exist_ok=True)
@@ -85,6 +87,7 @@ plt.show()
 
 # Scatter + regression line
 plt.figure()
+print(df["Count"])
 plt.scatter(df["Size"], df["Count"])
 # Fit linear model
 X = sm.add_constant(df["Size"])
@@ -103,3 +106,21 @@ plt.show()
 print(model.summary())
 with open(f"{result_path}/linearRegressionDetails.log", "w") as f:
     f.write(model.summary().as_text())
+
+significance_level = int(config.get("significanceLevel", 0.05))
+slope = model.params["Size"]
+standard_error = model.bse["Size"]
+n = model.df_model
+logger.info(f"b1: {slope:.4f}")
+h0_slope = 0
+
+t_stat = (slope - h0_slope) / standard_error
+
+# 单尾检验（右侧）：当且仅当 t_stat 为正时计算右尾概率
+p_value = model.pvalues["Size"] / 2 if t_stat > 0 else 1 - (model.pvalues["Size"] / 2)
+logger.info(f"p-value: {p_value:.4f}")
+
+if p_value < significance_level and t_stat > 0:
+    logger.success(f"Reject H0:b1 = {h0_slope}")
+else:
+    logger.success(f"Fail to reject H0:b1 = {h0_slope}")

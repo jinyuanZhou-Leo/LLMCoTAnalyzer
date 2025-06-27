@@ -1,8 +1,7 @@
 import ttkbootstrap as ttk
 import tkinter as tk
-from tkinter import messagebox
 from ttkbootstrap.tableview import TableRow, Tableview
-from typing import Callable, Any
+from typing import Callable
 from loguru import logger
 
 

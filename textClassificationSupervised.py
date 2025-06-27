@@ -115,11 +115,13 @@ class TextClassifier:
 if __name__ == "__main__":
     logger.warning("This is a demo script, this module is not meant to be run directly.")
     classifier = TextClassifier(
-        model_name="Alibaba-NLP/gte-multilingual-base",
+        model_name="Qwen/Qwen3-Embedding-4B",
         train_batch_path="train.csv",
         eval_batch_path="val.csv",
         batch_size=32,
-    )
+    )  # TODO: Test with new embedding model
+    # Alibaba-NLP/gte-multilingual-base
+    # Qwen/Qwen3-Embedding-4B
     # intfloat/multilingual-e5-large-instruct
     text = "000000 gives approx 0."
     label, prob = classifier.get_prediction(text)
